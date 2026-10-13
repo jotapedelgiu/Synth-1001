@@ -1,0 +1,700 @@
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+canvas {
+  display: block;
+}
+
+.hud {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font: 14px monospace;
+  color: #33ff66;
+}
+
+.hud button {
+  font: inherit;
+  color: #33ff66;
+  background: transparent;
+  border: 1px solid #33ff66;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+.hud button:hover {
+  background: #33ff6622;
+}
+
+/* Área de trabalho infinita: o "mundo" recebe a translação e a escala (zoom) pelo JS */
+.workspace {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background-color: #000;
+  background-image: radial-gradient(#33ff6633 1px, transparent 1.5px);
+  background-size: var(--grid, 28px) var(--grid, 28px);
+  background-position: var(--grid-x, 0) var(--grid-y, 0);
+  cursor: grab;
+  touch-action: none;
+}
+
+.workspace.panning {
+  cursor: grabbing;
+}
+
+.world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+}
+
+/* nós: arrastáveis por qualquer parte que não seja um controle */
+.node {
+  position: absolute;
+  width: max-content;
+  cursor: grab;
+}
+
+.node.dragging {
+  cursor: grabbing;
+  box-shadow: 0 0 0 1px #33ff66, 0 0 24px #33ff6644;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px 10px;
+  background: rgba(0, 0, 0, 0.92);
+  border: 1px solid #33ff6666;
+  font: 12px monospace;
+  color: #33ff66;
+}
+
+.panel-title {
+  margin-bottom: 6px;
+  font: 12px monospace;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #33ff6655;
+}
+
+.panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.panel button {
+  font: inherit;
+  color: #33ff66;
+  background: transparent;
+  border: 1px solid #33ff66;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.panel button:hover {
+  background: #33ff6622;
+}
+
+.panel button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* --- Jacks: entradas no canto superior esquerdo, saídas no inferior direito --- */
+.jack-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.jack-group:empty {
+  display: none;
+}
+
+/* o centro do conector fica sobre a borda do painel */
+.jack-group-in {
+  align-self: flex-start;
+  margin: 0 0 6px -20px;
+}
+
+.jack-group-out {
+  align-self: flex-end;
+  margin: 6px -20px 0 0;
+}
+
+.jack {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
+.jack-out {
+  flex-direction: row-reverse;
+}
+
+.jack-dot {
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid #33ff66;
+  background: #000;
+}
+
+.jack-out .jack-dot {
+  background: #33ff66;
+}
+
+.jack-label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.jack-hot .jack-dot {
+  box-shadow: 0 0 0 3px #33ff6677;
+}
+
+.jack:hover .jack-dot {
+  box-shadow: 0 0 0 3px #33ff6699;
+}
+
+.cables {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.cable {
+  fill: none;
+  stroke-width: calc(4px * var(--zoom, 1));
+  stroke-linecap: round;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.cable-temp {
+  stroke: #ffffff;
+  stroke-dasharray: calc(6px * var(--zoom, 1)) calc(6px * var(--zoom, 1));
+}
+
+.cable-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: calc(14px * var(--zoom, 1));
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.cable-hit:hover + .cable,
+.cable:has(+ .cable-hit:hover) {
+  stroke-width: calc(6px * var(--zoom, 1));
+}
+
+.knob-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font: 14px monospace;
+  color: #33ff66;
+  user-select: none;
+}
+
+.knob {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  cursor: ns-resize;
+  touch-action: none;
+  outline: none;
+}
+
+.knob:focus-visible .knob-dial {
+  box-shadow: 0 0 0 2px #33ff66;
+}
+
+.knob svg {
+  position: absolute;
+  inset: 0;
+}
+
+.knob .tick {
+  stroke: #33ff6688;
+  stroke-width: 1.5;
+}
+
+.knob .tick.major {
+  stroke: #33ff66;
+  stroke-width: 2.5;
+}
+
+.knob-dial {
+  position: absolute;
+  inset: 11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #3a3f3c, #0d0f0e 70%);
+  border: 2px solid #33ff66;
+}
+
+.knob-pointer {
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  width: 3px;
+  height: 10px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: #33ff66;
+}
+
+.knob-readout {
+  font-size: 13px;
+}
+
+.knob-label {
+  font-size: 10px;
+  opacity: 0.7;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.env-curve {
+  display: block;
+  width: 100%;
+  height: 80px;
+  border: 1px solid #33ff6655;
+}
+
+.knob-row {
+  display: flex;
+  gap: 8px;
+}
+
+.segmented {
+  display: flex;
+}
+
+.panel .segmented button {
+  flex: 1;
+  padding: 4px 6px;
+  border-right-width: 0;
+}
+
+.panel .segmented button:last-child {
+  border-right-width: 1px;
+}
+
+.panel .segmented button.active {
+  background: #33ff66;
+  color: #000;
+}
+
+/* --- Portas e cabos de gate (evento): quadrados e tracejados --- */
+.jack-gate .jack-dot {
+  border-radius: 3px;
+  border-color: #ffb000;
+}
+
+.jack-gate.jack-out .jack-dot {
+  background: #ffb000;
+}
+
+.jack-gate .jack-label {
+  color: #ffb000;
+}
+
+.cable-gate {
+  stroke-dasharray: calc(10px * var(--zoom, 1)) calc(6px * var(--zoom, 1));
+  stroke-width: calc(3px * var(--zoom, 1));
+}
+
+/* --- Sequenciador --- */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(8, 30px);
+  gap: 6px 3px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  padding: 2px;
+  border: 1px solid transparent;
+}
+
+.step.playing {
+  border-color: #ffb000;
+  background: #ffb00022;
+}
+
+.panel .step-toggle {
+  padding: 8px 0;
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.panel .step-toggle.on {
+  background: #33ff66;
+  color: #000;
+  opacity: 1;
+}
+
+.step-note {
+  padding: 4px 0;
+  text-align: center;
+  border: 1px solid #33ff6666;
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.step-note.muted {
+  opacity: 0.4;
+}
+
+/* --- Tela do osciloscópio (dentro do painel) --- */
+.scope-screen {
+  position: relative;
+  width: 400px;
+  height: 260px;
+  border: 1px solid #33ff6688;
+  background-color: #000;
+  /* retícula 10 x 8 divisões */
+  background-image:
+    linear-gradient(to right, #33ff6628 1px, transparent 1px),
+    linear-gradient(to bottom, #33ff6628 1px, transparent 1px);
+  background-size: 10% 12.5%;
+}
+
+.scope-screen canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* --- Lista de ritmos --- */
+.panel select {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  color: #33ff66;
+  background: #000;
+  border: 1px solid #33ff66;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.panel select:focus-visible {
+  outline: 1px solid #33ff66;
+}
+
+.panel select option {
+  background: #000;
+  color: #33ff66;
+}
+
+/* --- Portas e cabos de clock: losangos azuis, tracejado curto --- */
+.jack-clock .jack-dot {
+  border-radius: 2px;
+  border-color: #33d6ff;
+  transform: rotate(45deg) scale(0.85);
+}
+
+.jack-clock.jack-out .jack-dot {
+  background: #33d6ff;
+}
+
+.jack-clock .jack-label {
+  color: #33d6ff;
+}
+
+.cable-clock {
+  stroke-dasharray: calc(3px * var(--zoom, 1)) calc(6px * var(--zoom, 1));
+  stroke-width: calc(3px * var(--zoom, 1));
+}
+
+/* --- Bateria --- */
+.drum-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.drum-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.drum-label {
+  width: 56px;
+  flex: none;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.panel .drum-step {
+  width: 17px;
+  height: 22px;
+  padding: 0;
+  border-color: #33ff6677;
+}
+
+.panel .drum-step.group {
+  margin-left: 5px;
+}
+
+.panel .drum-step.on {
+  background: #33ff66;
+}
+
+.panel .drum-step.playing {
+  outline: 2px solid #ffb000;
+  outline-offset: 0;
+}
+
+/* --- Controles da área de trabalho na barra superior --- */
+.hud {
+  z-index: 20;
+}
+
+.hud-group {
+  display: flex;
+}
+
+.hud-group button {
+  padding: 6px 10px;
+  min-width: 34px;
+}
+
+.hud-group button + button {
+  border-left-width: 0;
+}
+
+.hud-status {
+  opacity: 0.85;
+}
+
+/* --- Menu de contexto (botão direito) --- */
+.context-menu {
+  position: fixed;
+  z-index: 40;
+  min-width: 190px;
+  padding: 4px 0;
+  background: rgba(0, 0, 0, 0.96);
+  border: 1px solid #33ff66;
+  box-shadow: 0 8px 28px #000;
+  font: 13px monospace;
+  color: #33ff66;
+  user-select: none;
+}
+
+.context-menu[hidden] {
+  display: none;
+}
+
+.context-menu-header {
+  padding: 6px 12px 3px;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.context-menu-header:not(:first-child) {
+  margin-top: 4px;
+  border-top: 1px solid #33ff6633;
+}
+
+.context-menu-item {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.context-menu-item:hover,
+.context-menu-item:focus-visible {
+  color: #000;
+  background: #33ff66;
+  outline: none;
+}
+
+/* --- Gerador de acordes --- */
+.chord-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 4px 8px;
+  border: 1px solid #33ff6644;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+
+.chord-readout strong {
+  min-width: 52px;
+  font-size: 18px;
+}
+
+/* --- Mixer de 4 canais: uma fileira por canal, tudo na horizontal --- */
+.mixer-strips {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border: 1px solid #33ff6644;
+}
+
+.strip.master {
+  border-color: #33ff66aa;
+}
+
+.strip-name {
+  width: 44px;
+  flex: none;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.strip .knob-wrap {
+  gap: 0;
+}
+
+.strip .knob {
+  width: 36px;
+  height: 36px;
+}
+
+.strip .knob-dial {
+  inset: 7px;
+  border-width: 1.5px;
+}
+
+.strip .knob-pointer {
+  top: 1px;
+  height: 6px;
+}
+
+.strip .knob-readout {
+  font-size: 9px;
+  line-height: 1.1;
+}
+
+.strip .knob-label {
+  font-size: 8px;
+  letter-spacing: 0.05em;
+}
+
+.strip-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.panel .strip-buttons button {
+  padding: 2px 6px;
+}
+
+.panel .strip-buttons button.mute.on {
+  background: #ff4040;
+  border-color: #ff4040;
+  color: #000;
+}
+
+.panel .strip-buttons button.solo.on {
+  background: #ffb000;
+  border-color: #ffb000;
+  color: #000;
+}
+
+.fader {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 130px;
+  flex: none;
+}
+
+.fader-slider {
+  width: 100%;
+  height: 14px;
+  margin: 0;
+  accent-color: #33ff66;
+  cursor: ew-resize;
+}
+
+.meter {
+  position: relative;
+  height: 6px;
+  overflow: hidden;
+  border: 1px solid #33ff6666;
+  background: #000;
+}
+
+.meter-bar {
+  position: absolute;
+  inset: 0;
+  transform-origin: left;
+  transform: scaleX(0);
+  background: linear-gradient(to right, #33ff66 0 65%, #ffb000 65% 88%, #ff4040 88%);
+  background-size: 130px 100%;
+}
+
+.meter-bar.clip {
+  outline: 1px solid #ff4040;
+}
+
+/* --- Botão Salvar no título do módulo --- */
+.panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel .save-button {
+  padding: 1px 6px;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: none;
+}

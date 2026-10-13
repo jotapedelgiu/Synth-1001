@@ -1,0 +1,124 @@
+// Batidas prontas para a bateria. Cada trilha tem 16 passos de semicolcheia:
+// "x" = toca, "." = silêncio. Os tempos do compasso 4/4 caem nos passos 1, 5, 9 e 13.
+// `group` (opcional) agrupa a batida na lista; `bpm` (opcional) é o andamento sugerido,
+// aplicado ao sequenciador quando a batida é escolhida.
+export const DRUM_PATTERNS = [
+  {
+    id: 'rock',
+    name: 'Rock básico',
+    kick: 'x.......x.x.....',
+    snare: '....x.......x...',
+    hat: 'x.x.x.x.x.x.x.x.',
+    open: '................',
+  },
+  {
+    id: 'house',
+    name: 'House 4x4',
+    kick: 'x...x...x...x...',
+    snare: '....x.......x...',
+    hat: 'x.x.x.x.x.x.x.x.',
+    open: '..x...x...x...x.',
+  },
+  {
+    id: 'hiphop',
+    name: 'Hip-hop (boom bap)',
+    kick: 'x.....x...x.....',
+    snare: '....x.......x...',
+    hat: 'x.x.x.x.x.x.x.x.',
+    open: '..............x.',
+  },
+  {
+    id: 'funk',
+    name: 'Funk',
+    kick: 'x.x....x..x.x...',
+    snare: '....x.......x..x',
+    hat: 'xxxxxxxxxxxxxx.x',
+    open: '..............x.',
+  },
+  {
+    id: 'disco',
+    name: 'Disco',
+    kick: 'x...x...x...x...',
+    snare: '....x.......x...',
+    hat: 'x.x.x.x.x.x.x.x.',
+    open: '.x...x...x...x..',
+  },
+  {
+    id: 'breakbeat',
+    name: 'Breakbeat',
+    kick: 'x.x.......x..x..',
+    snare: '....x..x.x..x...',
+    hat: 'x.x.x.x.x.x.x.x.',
+    open: '................',
+  },
+  {
+    id: 'techno-classic', group: 'Techno', bpm: 130,
+    name: 'Techno clássico 4x4 (130 BPM)',
+    kick: 'x...x...x...x...',
+    snare: '....x.......x...',
+    hat: 'x...x...x...x...',
+    open: '..x...x...x...x.',
+  },
+  {
+    id: 'techno-minimal', group: 'Techno', bpm: 125,
+    name: 'Techno minimal (125 BPM)',
+    kick: 'x...x...x...x...',
+    snare: '............x...',
+    hat: '..x...x...x...x.',
+    open: '...............x',
+  },
+  {
+    id: 'techno-peak', group: 'Techno', bpm: 135,
+    name: 'Techno peak time (135 BPM)',
+    kick: 'x...x...x...x...',
+    snare: '....x.......x...',
+    hat: 'xxxxxxxxxxxxxxxx',
+    open: '..x...x...x...x.',
+  },
+  {
+    id: 'techno-detroit', group: 'Techno', bpm: 126,
+    name: 'Techno Detroit (126 BPM)',
+    kick: 'x...x...x...x...',
+    snare: '....x.......x..x',
+    hat: 'x.xx.xx.x.xx.xx.',
+    open: '..x...x...x...x.',
+  },
+  {
+    id: 'techno-hard', group: 'Techno', bpm: 150,
+    name: 'Hard techno (150 BPM)',
+    kick: 'x...x...x...xxxx',
+    snare: '....x.......x...',
+    hat: 'x.x.x.x.x.x.x.x.',
+    open: '..x...x...x...x.',
+  },
+  {
+    id: 'techno-dub', group: 'Techno', bpm: 118,
+    name: 'Dub techno (118 BPM)',
+    kick: 'x...x...x...x...',
+    snare: '...x......x.....',
+    hat: '..x...x...x...x.',
+    open: '......x.......x.',
+  },
+  {
+    id: 'techno-industrial', group: 'Techno', bpm: 140,
+    name: 'Techno industrial (140 BPM)',
+    kick: 'x.x...x.x.x...x.',
+    snare: '....x.......x..x',
+    hat: 'x.x.x.x.x.x.x.x.',
+    open: '...............x',
+  },
+  {
+    id: 'empty',
+    name: 'Vazio',
+    kick: '................',
+    snare: '................',
+    hat: '................',
+    open: '................',
+  },
+];
+
+// Converte "x..." em [true, false, false, ...]
+export function parseTrack(text) {
+  if (text.length !== 16) throw new Error(`Trilha "${text}" não tem 16 passos`);
+  return [...text].map((c) => c === 'x');
+}
