@@ -299,6 +299,7 @@ canvas {
 
 .segmented {
   display: flex;
+  flex-wrap: wrap;
 }
 
 .panel .segmented button {
@@ -451,6 +452,17 @@ canvas {
 .drum-row {
   display: flex;
   align-items: center;
+  gap: 2px;
+}
+
+.drum-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.drum-bar {
+  display: flex;
   gap: 2px;
 }
 
@@ -684,17 +696,18 @@ canvas {
   outline: 1px solid #ff4040;
 }
 
-/* --- Botão Salvar no título do módulo --- */
-.panel-title {
-  display: flex;
+
+.hud-bpm {
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 4px;
 }
 
-.panel .save-button {
-  padding: 1px 6px;
-  font-size: 10px;
-  letter-spacing: 0.05em;
-  text-transform: none;
+.hud-bpm input {
+  width: 52px;
+  padding: 6px 4px;
+  font: inherit;
+  text-align: center;
+  color: #33ff66;
+  background: transparent;
+  border: 1px solid #33ff66;
 }

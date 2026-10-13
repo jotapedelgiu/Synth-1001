@@ -1,3 +1,4 @@
+import { createBassPanel } from './BassPanel.js';
 import { createChordPanel } from './ChordPanel.js';
 import { createDelayPanel } from './DelayPanel.js';
 import { createDrumPanel } from './DrumPanel.js';
@@ -9,7 +10,9 @@ import { createPhaserPanel } from './PhaserPanel.js';
 import { createSequencerPanel } from './SequencerPanel.js';
 import {
   createMicrophonePanel,
+  createLfoPanel,
   createMixerPanel,
+  createNoisePanel,
   createScopePanel,
   createSpeakerPanel,
 } from './UtilityPanels.js';
@@ -23,6 +26,7 @@ export function createModulePanel(module, { title, refresh, tempo }) {
   let panel;
   switch (module.moduleType) {
     case 'oscillator': panel = createOscillatorPanel('Onda', module, refresh); break;
+    case 'bass': panel = createBassPanel(module, refresh); break;
     case 'chord': panel = createChordPanel(module, refresh); break;
     case 'filter': panel = createFilterPanel(module); break;
     case 'envelope': panel = createEnvelopePanel(module); break;
@@ -35,6 +39,8 @@ export function createModulePanel(module, { title, refresh, tempo }) {
     case 'sequencer': panel = createSequencerPanel(module); break;
     case 'drums': panel = createDrumPanel(module); break;
     case 'scope': panel = createScopePanel(module); break;
+    case 'noise': panel = createNoisePanel(module); break;
+    case 'lfo': panel = createLfoPanel(module); break;
     default: throw new Error(`Sem painel para o tipo "${module.moduleType}"`);
   }
   const result = panel instanceof HTMLElement ? { element: panel } : panel;

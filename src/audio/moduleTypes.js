@@ -1,10 +1,13 @@
+import { Bass } from './modules/Bass.js';
 import { ChordOscillator } from './modules/ChordOscillator.js';
 import { Delay } from './modules/Delay.js';
 import { DrumMachine } from './modules/DrumMachine.js';
 import { Envelope } from './modules/Envelope.js';
 import { Filter } from './modules/Filter.js';
 import { Gain } from './modules/Gain.js';
+import { Lfo } from './modules/Lfo.js';
 import { Microphone } from './modules/Microphone.js';
+import { Noise } from './modules/Noise.js';
 import { Mixer4 } from './modules/Mixer4.js';
 import { Oscillator } from './modules/Oscillator.js';
 import { FFT_SIZE, Scope } from './modules/Scope.js';
@@ -23,10 +26,14 @@ export const MODULE_TYPES = [
       return osc;
     },
   },
+  { type: Bass.type, label: 'Baixo', group: 'Fontes', create: (ctx) => new Bass(ctx) },
   { type: ChordOscillator.type, label: 'Acordes', group: 'Fontes', create: (ctx) => new ChordOscillator(ctx) },
   { type: Sequencer.type, label: 'Sequenciador', group: 'Fontes', create: (ctx, { tempo }) => new Sequencer(ctx, tempo) },
   { type: DrumMachine.type, label: 'Bateria', group: 'Fontes', create: (ctx) => new DrumMachine(ctx) },
   { type: Microphone.type, label: 'Microfone', group: 'Fontes', create: (ctx) => new Microphone(ctx) },
+  { type: Noise.type, label: 'Ruído', group: 'Fontes', create: (ctx) => new Noise(ctx) },
+
+  { type: Lfo.type, label: 'LFO', group: 'Modulação', create: (ctx) => new Lfo(ctx) },
 
   { type: Filter.type, label: 'Filtro', group: 'Processadores', create: (ctx) => new Filter(ctx) },
   { type: Envelope.type, label: 'Envelope ADSR', group: 'Processadores', create: (ctx) => new Envelope(ctx) },

@@ -2,15 +2,16 @@ import { Module } from '../Module.js';
 import { ClockOut, GateOut } from '../EventPorts.js';
 import { Tempo } from '../Tempo.js';
 import { PATTERNS, resolveSteps } from '../patterns.js';
+import { STEPS, fitBars } from '../steps.js';
 
-export const STEPS = 16;
+export { STEPS };
 export const NOTE_MIN = -12; // semitons em relação à frequência do oscilador
 export const NOTE_MAX = 24;
 
 const LOOKAHEAD = 0.12; // s: quanto à frente os passos são agendados
 const TICK_MS = 25; // intervalo do timer que reabastece a fila
 
-// Sequenciador de passos de semicolcheias (16 passos).
+// Sequenciador de passos de semicolcheias: 32 passos (dois compassos de 16) antes de repetir.
 // Portas de saída:
 //   `gate`  (evento) liga/desliga a nota em cada passo ativo → entrada gate do envelope
 //   `pitch` (sinal)  nota do passo, em oitavas, relativa à frequência do oscilador
@@ -25,9 +26,9 @@ export class Sequencer extends Module {
   #nextTime = 0;
   #nextStep = 0;
   #queue = []; // { step, time } agendados, para a interface acompanhar o passo atual
-  #stops = new Set(); // cancelamentos dos avisos de BPM registrados por quem usa este módulo
 
-  // `tempo`: o andamento compartilhado (BPM); sem ele o sequenciador tem o seu próprio
+  // `tempo`: o andamento compartilhado (BPM), que quem manda é a barra superior; sem ele o
+  // sequenciador tem o seu próprio
   constructor(ctx, tempo = new Tempo()) {
     super(ctx);
     this.tempo = tempo;
@@ -47,32 +48,21 @@ export class Sequencer extends Module {
     this.outputs.clock = this.clock;
   }
 
-  // O andamento é do Tempo compartilhado: mudar aqui muda para todos que o seguem
+  // O andamento é do Tempo compartilhado, ajustado na barra superior
   get bpm() {
     return this.tempo.bpm;
   }
 
-  set bpm(value) {
-    this.tempo.bpm = value;
-  }
-
-  onBpmChange(fn) {
-    const stop = this.tempo.onChange(fn);
-    this.#stops.add(stop);
-    return stop;
-  }
-
   dispose() {
     this.stop();
-    for (const stop of this.#stops) stop();
     this.pitchSource.stop();
   }
 
-  // Carrega um padrão de patterns.js: troca os passos e, se o padrão sugerir, o BPM e o gate.
+  // Carrega um padrão de patterns.js: troca os passos e, se o padrão sugerir, o gate.
+  // O BPM não muda: é global (o `bpm` do padrão é só uma sugestão).
   // Os objetos dos passos são alterados no lugar (a interface os referencia).
   load(pattern) {
     resolveSteps(pattern).forEach((step, i) => Object.assign(this.steps[i], step));
-    if (pattern.bpm) this.bpm = pattern.bpm;
     if (pattern.gate) this.gateLength = pattern.gate;
   }
 
@@ -96,7 +86,7 @@ export class Sequencer extends Module {
     this.gate.off(now); // solta a nota que estiver soando (e cancela as agendadas)
   }
 
-  // Passo que está soando agora (0–15), ou -1 se parado. Chamado pela interface a cada quadro.
+  // Passo que está soando agora (0–31), ou -1 se parado. Chamado pela interface a cada quadro.
   playheadStep() {
     if (!this.playing) return -1;
     const now = this.audibleTime(); // destaca o que se ouve, não o que está sendo processado
@@ -132,13 +122,13 @@ export class Sequencer extends Module {
     return {
       steps: this.steps.map(({ on, note }) => ({ on, note })),
       gateLength: this.gateLength,
-      bpm: this.bpm,
     };
   }
 
   setState(s) {
+    // cenas salvas antes dos dois compassos têm 16 passos: o compasso é repetido
+    if (s.steps?.length === 16) s = { ...s, steps: fitBars(s.steps) };
     s.steps?.slice(0, STEPS).forEach((step, i) => Object.assign(this.steps[i], { on: Boolean(step.on), note: step.note | 0 }));
     if (s.gateLength) this.gateLength = s.gateLength;
-    if (s.bpm) this.bpm = s.bpm;
   }
 }

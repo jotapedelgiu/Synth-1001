@@ -2,7 +2,7 @@ import { createKnob } from './Knob.js';
 import { createPanel } from './Panel.js';
 import { createWaveformButtons } from './WaveformButtons.js';
 
-// Painel de um Oscillator: forma de onda, frequência, amplitude, fase e profundidade de FM.
+// Painel de um Oscillator: forma de onda, frequência, amplitude, fase, profundidade de FM e detune (unison).
 // `onChange` avisa a interface que algum valor mudou.
 export function createOscillatorPanel(title, osc, onChange) {
   const { element, body, row } = createPanel(title, osc);
@@ -25,6 +25,10 @@ export function createOscillatorPanel(title, osc, onChange) {
     createKnob({
       min: 0, max: 1000, value: osc.fmDepth, label: 'Depth FM', unit: 'Hz',
       onChange: (hz) => osc.setFmDepth(hz),
+    }).element,
+    createKnob({
+      min: 0, max: 50, value: osc.unison, step: 1, label: 'Detune', unit: 'ct',
+      onChange: (cents) => osc.setUnison(cents),
     }).element,
   );
   return element;

@@ -3,7 +3,7 @@ import { createKnob } from './Knob.js';
 import { createPanel } from './Panel.js';
 import { createWaveformButtons } from './WaveformButtons.js';
 
-// Painel do gerador de acordes: forma de onda, tipo de acorde, nota raiz, inversão e amplitude.
+// Painel do gerador de acordes: forma de onda, tipo de acorde, nota raiz, inversão, amplitude e detune (unison).
 // `onChange` avisa a interface que algo que aparece no status mudou.
 export function createChordPanel(chord, onChange) {
   const { element, body, row } = createPanel('Acordes', chord);
@@ -46,6 +46,10 @@ export function createChordPanel(chord, onChange) {
     createKnob({
       min: 0, max: 100, value: chord.amp, step: 5, label: 'Amplitude', unit: '%',
       onChange: (pct) => chord.setAmp(pct),
+    }).element,
+    createKnob({
+      min: 0, max: 50, value: chord.unison, step: 1, label: 'Detune', unit: 'ct',
+      onChange: (cents) => chord.setUnison(cents),
     }).element,
   );
   return element;

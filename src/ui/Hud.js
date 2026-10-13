@@ -1,7 +1,10 @@
 // Barra superior: ativar o áudio, controles da área de trabalho (zoom, ajustar, reorganizar)
 // e o texto de status.
+const BPM_MIN = 40;
+const BPM_MAX = 300;
+
 export class Hud {
-  constructor({ onStart, onZoom, onFit, onReset }) {
+  constructor({ onStart, onZoom, onFit, onReset, onSave, onBpm }) {
     this.element = document.createElement('div');
     this.element.className = 'hud';
 
@@ -16,12 +19,39 @@ export class Hud {
     this.zoom.title = 'Zoom (roda do mouse). Clique para ajustar tudo à tela';
     zoom.append(this.#button('−', () => onZoom(1 / 1.25)), this.zoom, this.#button('+', () => onZoom(1.25)));
 
+    // BPM global: todos os módulos que seguem o andamento (sequenciador, bateria, delay) usam este
+    const bpm = document.createElement('div');
+    bpm.className = 'hud-group hud-bpm';
+    bpm.title = 'Andamento (BPM) de todo o patch';
+    const bpmLabel = document.createElement('span');
+    bpmLabel.textContent = 'BPM';
+    this.bpm = document.createElement('input');
+    this.bpm.type = 'number';
+    this.bpm.min = BPM_MIN;
+    this.bpm.max = BPM_MAX;
+    this.bpm.step = 1;
+    this.bpm.addEventListener('change', () => {
+      const value = Math.min(BPM_MAX, Math.max(BPM_MIN, Math.round(Number(this.bpm.value)) || BPM_MIN));
+      this.bpm.value = value;
+      onBpm(value);
+    });
+    bpm.append(bpmLabel, this.#button('−', () => onBpm(this.#clampBpm(Number(this.bpm.value) - 1))),
+      this.bpm, this.#button('+', () => onBpm(this.#clampBpm(Number(this.bpm.value) + 1))));
+
     const fit = this.#button('Ajustar', onFit);
     fit.title = 'Enquadra todos os módulos na tela';
     const reset = this.#button('Reorganizar', onReset);
     reset.title = 'Devolve cada módulo à posição original';
 
-    this.element.append(this.start, zoom, fit, reset, this.status);
+    // onSave() retorna se deu certo; o botão avisa por um instante
+    const save = this.#button('Salvar cena', () => {
+      save.textContent = onSave() ? 'Salvo ✓' : 'Falhou';
+      clearTimeout(this.saveTimer);
+      this.saveTimer = setTimeout(() => { save.textContent = 'Salvar cena'; }, 1200);
+    });
+    save.title = 'Salva o projeto inteiro (módulos, ajustes, posições e cabos); ele reabre assim na próxima visita';
+
+    this.element.append(this.start, bpm, zoom, fit, reset, save, this.status);
     document.body.appendChild(this.element);
   }
 
@@ -29,6 +59,14 @@ export class Hud {
   render({ started, status }) {
     this.start.hidden = started;
     this.status.textContent = status;
+  }
+
+  setBpm(bpm) {
+    this.bpm.value = bpm;
+  }
+
+  #clampBpm(value) {
+    return Math.min(BPM_MAX, Math.max(BPM_MIN, value));
   }
 
   setZoom(zoom) {

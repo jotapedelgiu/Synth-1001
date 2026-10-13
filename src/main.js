@@ -6,7 +6,7 @@ import { CableLayer } from './ui/CableLayer.js';
 import { ContextMenu } from './ui/ContextMenu.js';
 import { Hud } from './ui/Hud.js';
 import { Workspace } from './ui/Workspace.js';
-import { restoreModule } from './ModuleStore.js';
+import { loadScene, saveScene } from './SceneStore.js';
 import { createModulePanel } from './ui/modulePanels.js';
 
 const POINTS = 2048;
@@ -47,21 +47,25 @@ const hud = new Hud({
   onZoom: (factor) => workspace.zoomBy(factor),
   onFit: () => workspace.fit(),
   onReset: () => workspace.resetLayout(),
+  onSave: () => saveScene(currentScene()),
+  onBpm: (bpm) => { synth.tempo.bpm = bpm; },
 });
 
 function refresh() {
   hud.render({ started, status: synth.statusText() });
 }
 synth.patch.onChange(refresh);
+synth.tempo.onChange((bpm) => hud.setBpm(bpm));
+hud.setBpm(synth.tempo.bpm);
 
 // --- Módulos na área de trabalho ----------------------------------------
 const scopes = new Map(); // id do osciloscópio → ScopeView
 
 // Cria o painel do módulo, coloca na área de trabalho e, se for um osciloscópio, liga a tela dele
-function mountModule(module, home, { title, restore = true } = {}) {
-  restoreModule(module);
+function mountModule(module, home, { title, state = null } = {}) {
+  if (state) restoreState(module, state);
   const panel = createModulePanel(module, { title, refresh, tempo: synth.tempo });
-  workspace.addNode(module.id, panel.element, home, { restore });
+  workspace.addNode(module.id, panel.element, home, { restore: false });
   if (panel.screen) mountScope(module, panel.screen);
 }
 
@@ -78,7 +82,49 @@ function mountScope(module, screen) {
 
 function addModule(type, home) {
   const { module, title } = synth.add(type);
-  mountModule(module, home, { title, restore: false });
+  mountModule(module, home, { title });
+}
+
+// Recoloca nos controles do módulo o que foi salvo (antes de criar o painel, que lê esses valores)
+function restoreState(module, state) {
+  try {
+    module.setState(state);
+    module.restored = true;
+  } catch (err) {
+    console.warn(`Estado salvo de "${module.id}" ignorado:`, err);
+  }
+}
+
+// --- Cena (o projeto inteiro) ---------------------------------------------
+function currentScene() {
+  return {
+    modules: synth.patch.modules.map((module) => ({
+      id: module.id,
+      type: module.moduleType,
+      title: document.querySelector(`[data-node="${module.id}"] .panel-title-text`)?.textContent,
+      state: module.getState(),
+      ...workspace.position(module.id),
+    })),
+    bpm: synth.tempo.bpm,
+    cables: synth.patch.cables.map(({ from, to }) => ({ from: { ...from }, to: { ...to } })),
+  };
+}
+
+// Troca o patch padrão pelo salvo. Roda antes de qualquer painel existir.
+function buildFromScene(scene) {
+  for (const module of synth.patch.modules) synth.remove(module.id);
+  for (const saved of scene.modules) {
+    try {
+      const { module, title } = synth.add(saved.type, saved.id);
+      mountModule(module, { x: saved.x ?? 0, y: saved.y ?? 0 }, { title: saved.title ?? title, state: saved.state });
+    } catch (err) {
+      console.warn(`Módulo "${saved.id}" ignorado:`, err);
+    }
+  }
+  // cenas antigas guardavam o BPM dentro do sequenciador
+  const bpm = scene.bpm ?? scene.modules.find((m) => m.type === 'sequencer')?.state?.bpm;
+  if (bpm) synth.tempo.bpm = bpm;
+  for (const { from, to } of scene.cables) synth.patch.connect(from.module, from.port, to.module, to.port);
 }
 
 function removeModule(id) {
@@ -88,9 +134,14 @@ function removeModule(id) {
   synth.remove(id);
 }
 
-for (const module of synth.patch.modules) {
-  const { x, y, title } = DEFAULT_NODES[module.id] ?? { x: 0, y: 0 };
-  mountModule(module, { x, y }, { title });
+const savedScene = loadScene();
+if (savedScene) {
+  buildFromScene(savedScene);
+} else {
+  for (const module of synth.patch.modules) {
+    const { x, y, title } = DEFAULT_NODES[module.id] ?? { x: 0, y: 0 };
+    mountModule(module, { x, y }, { title });
+  }
 }
 
 const cables = new CableLayer(synth.patch, workspace.world, () => workspace.zoom);

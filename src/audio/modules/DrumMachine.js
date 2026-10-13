@@ -2,6 +2,7 @@ import { Module } from '../Module.js';
 import { ClockIn } from '../EventPorts.js';
 import { DEFAULT_KIT, DRUM_KITS } from '../drumKits.js';
 import { DRUM_PATTERNS, parseTrack } from '../drumPatterns.js';
+import { STEPS, fitBars } from '../steps.js';
 import { Gain } from './Gain.js';
 
 export const DRUM_TRACKS = [
@@ -9,6 +10,10 @@ export const DRUM_TRACKS = [
   { id: 'snare', name: 'Caixa' },
   { id: 'hat', name: 'Chimbal' },
   { id: 'open', name: 'Aberto' },
+  { id: 'clap', name: 'Palma' }, // house, techno, electro: reforça ou substitui a caixa
+  { id: 'tom', name: 'Tom' }, // electro, drum & bass e jungle: viradas e rolagens
+  { id: 'rim', name: 'Rimshot' }, // estalo seco: ghost notes do jungle, techno, 808
+  { id: 'ride', name: 'Prato' }, // prato de condução: jungle e drum & bass
 ];
 
 // Frequências (Hz) dos seis osciladores quadrados do chimbal, as mesmas usadas no circuito
@@ -23,7 +28,7 @@ const COMPRESSOR_DELAY = 0.006;
 
 // Bateria: bumbo, caixa, chimbal fechado e chimbal aberto.
 // Portas: `clock` (entrada, do sequenciador: dá o andamento) e `out` (áudio).
-// Cada trilha tem 16 passos; a cada pulso do clock as trilhas ligadas naquele passo tocam,
+// Cada trilha tem 32 passos (dois compassos); a cada pulso do clock as trilhas ligadas naquele passo tocam,
 // agendadas no instante exato do pulso (relógio do áudio). Play, parar e BPM são do
 // sequenciador que está ligado ao clock.
 //
@@ -56,7 +61,7 @@ export class DrumMachine extends Module {
     this.kit = 'synth'; // kit em uso; muda quando setKit() termina de carregar
     this.onKit = null; // callback(id) quando o kit em uso muda
     this.output = new Gain(ctx, 1);
-    this.tracks = DRUM_TRACKS.map((t) => ({ ...t, steps: new Array(16).fill(false), level: 80 }));
+    this.tracks = DRUM_TRACKS.map((t) => ({ ...t, steps: new Array(STEPS).fill(false), level: 80 }));
     this.#noise = this.#makeNoise();
 
     // vozes → bus → compressor → saída
@@ -131,11 +136,11 @@ export class DrumMachine extends Module {
   // Carrega uma batida de drumPatterns.js (os arrays dos passos são trocados no lugar)
   load(pattern) {
     for (const track of this.tracks) {
-      parseTrack(pattern[track.id]).forEach((on, i) => { track.steps[i] = on; });
+      parseTrack(pattern[track.id] ?? '.'.repeat(16)).forEach((on, i) => { track.steps[i] = on; });
     }
   }
 
-  // Passo que está soando agora (0–15), ou -1 se o clock está parado
+  // Passo que está soando agora (0–31), ou -1 se o clock está parado
   playheadStep() {
     const now = this.audibleTime(); // destaca o que se ouve, não o que está sendo processado
     while (this.#queue.length > 1 && this.#queue[1].time <= now) this.#queue.shift();
@@ -152,6 +157,10 @@ export class DrumMachine extends Module {
       case 'snare': return this.#snare(when, level);
       case 'hat': return this.#hat(when, level);
       case 'open': return this.#open(when, level);
+      case 'clap': return this.#clap(when, level);
+      case 'tom': return this.#tom(when, level);
+      case 'rim': return this.#rim(when, level);
+      case 'ride': return this.#ride(when, level);
       default: return undefined;
     }
   }
@@ -240,6 +249,71 @@ export class DrumMachine extends Module {
     this.#openChoke = this.#metalHit(when, level * 0.9, 0.11, 0.7);
   }
 
+  // Palma: quatro rajadas curtas de ruído (as "mãos" quase juntas) e uma cauda mais longa
+  #clap(when, level) {
+    const band = this.ctx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = 1300;
+    band.Q.value = 1.1;
+    band.connect(this.#snareDrive);
+    [0, 0.011, 0.023, 0.036].forEach((offset, i) => {
+      const last = i === 3;
+      const burst = this.#noiseSource(when + offset, last ? 0.3 : 0.03);
+      const amp = this.ctx.createGain();
+      amp.gain.setValueAtTime(level * (last ? 0.9 : 0.6), when + offset);
+      amp.gain.setTargetAtTime(0, when + offset + (last ? 0 : 0.004), last ? 0.07 : 0.006);
+      burst.connect(amp).connect(band);
+    });
+  }
+
+  // Tom grave: seno que cai de afinação (como o bumbo, mas mais agudo e mais longo)
+  #tom(when, level) {
+    const osc = this.ctx.createOscillator();
+    osc.frequency.setValueAtTime(190, when);
+    osc.frequency.exponentialRampToValueAtTime(105, when + 0.12);
+    const amp = this.ctx.createGain();
+    amp.gain.setValueAtTime(level * 0.9, when);
+    amp.gain.setTargetAtTime(0, when + 0.01, 0.11);
+    osc.connect(amp).connect(this.#snareDrive);
+    osc.start(when);
+    osc.stop(when + 0.8);
+    const click = this.#noiseSource(when, 0.02); // ataque da baqueta
+    const hp = this.ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 3000;
+    const clickAmp = this.ctx.createGain();
+    clickAmp.gain.setValueAtTime(level * 0.2, when);
+    clickAmp.gain.setTargetAtTime(0, when, 0.003);
+    click.connect(hp).connect(clickAmp).connect(this.#bus);
+  }
+
+  // Rimshot (estilo 808): dois tons agudos muito curtos, somados a um estalo de ruído
+  #rim(when, level) {
+    for (const [freq, gain] of [[1700, 0.5], [500, 0.5]]) {
+      const tone = this.ctx.createOscillator();
+      tone.frequency.value = freq;
+      const amp = this.ctx.createGain();
+      amp.gain.setValueAtTime(level * gain, when);
+      amp.gain.setTargetAtTime(0, when, 0.008);
+      tone.connect(amp).connect(this.#bus);
+      tone.start(when);
+      tone.stop(when + 0.1);
+    }
+    const click = this.#noiseSource(when, 0.02);
+    const hp = this.ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 2000;
+    const clickAmp = this.ctx.createGain();
+    clickAmp.gain.setValueAtTime(level * 0.5, when);
+    clickAmp.gain.setTargetAtTime(0, when, 0.004);
+    click.connect(hp).connect(clickAmp).connect(this.#bus);
+  }
+
+  // Prato de condução: o banco metálico com decaimento longo, mais baixo que o chimbal
+  #ride(when, level) {
+    this.#metalHit(when, level * 0.45, 0.28, 1.6);
+  }
+
   // Um golpe do banco metálico: ganho que decai com constante `tau`, desligado depois de
   // `lifetime` s. Retorna o ganho (o chimbal aberto o guarda para poder ser cortado).
   #metalHit(when, level, tau, lifetime) {
@@ -324,7 +398,8 @@ export class DrumMachine extends Module {
     for (const track of this.tracks) {
       const saved = s.tracks?.[track.id];
       if (!saved) continue;
-      saved.steps?.slice(0, 16).forEach((on, i) => { track.steps[i] = Boolean(on); });
+      if (saved.steps?.length === 16) saved.steps = fitBars(saved.steps); // cena de um compasso só
+      saved.steps?.slice(0, STEPS).forEach((on, i) => { track.steps[i] = Boolean(on); });
       track.level = saved.level ?? track.level;
     }
     if (s.kit) this.setKit(s.kit);

@@ -49,7 +49,7 @@ Os módulos são **nós** numa área infinita, como no editor de materiais da Un
 - **Arrastar um módulo** por qualquer parte que não seja um controle: move o nó. Os cabos acompanham.
 - **Ajustar** enquadra todos os módulos na tela; **Reorganizar** devolve cada um à posição original.
 - **Botão direito** (clique sem arrastar) no fundo: lista os módulos que podem ser **adicionados** (Oscilador, Acordes, Sequenciador, Bateria, Microfone, Filtro, Envelope, Delay, Mixer, Alto-falante, Osciloscópio), no ponto clicado. Sobre um módulo: **Remover módulo**. Arrastar com o botão direito continua movendo a vista.
-- Posições e zoom são lembrados entre as visitas (localStorage). Os módulos adicionados e os cabos **não** são salvos: ao recarregar volta o patch padrão.
+- Posições e zoom são lembrados entre as visitas (localStorage). O botão **Salvar cena** (barra superior) guarda o projeto inteiro: módulos, ajustes, posições e cabos. Na próxima visita ele reabre assim; sem cena salva, volta o patch padrão.
 
 Posição inicial: o sinal flui da esquerda para a direita e, em escada, de cima para baixo (fontes no canto superior esquerdo, saídas no inferior direito). Os valores iniciais estão em `src/main.js` (`nodes`). Em cada módulo, as **entradas** ficam no canto superior esquerdo e as **saídas** no inferior direito.
 

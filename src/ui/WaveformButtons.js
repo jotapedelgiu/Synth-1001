@@ -1,6 +1,6 @@
 import { WAVEFORMS } from '../audio/waveforms.js';
 
-// Botões de escolha da forma de onda (seno, serra, quadrada, triângulo) de qualquer módulo que
+// Botões de escolha da forma de onda (seno, serra, quadrada, triângulo, pulsos) de qualquer módulo que
 // tenha `waveform` e `setWaveform(nome)`: Oscilador, Acordes...
 export function createWaveformButtons(module) {
   const element = document.createElement('div');

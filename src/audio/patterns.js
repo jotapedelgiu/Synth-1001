@@ -1,7 +1,9 @@
-// Padrões de 16 passos (semicolcheias) para o sequenciador, inspirados em linhas clássicas
+import { STEPS, fitBars } from './steps.js';
+
+// Padrões de 16 ou 32 passos (semicolcheias) para o sequenciador, inspirados em linhas clássicas
 // de sintetizadores analógicos. São aproximações no estilo de cada um, não transcrições.
 //
-// `steps`: 16 posições separadas por espaço. "." = passo desligado; um número = passo ligado
+// `steps`: 16 posições (um compasso, repetido) ou 32 (dois compassos), separadas por espaço. "." = passo desligado; um número = passo ligado
 // naquela nota, em semitons acima (ou abaixo, se negativo) da frequência do oscilador.
 // `bpm` e `gate` (% do passo) são o andamento e a duração das notas sugeridos; null = não muda.
 // `group` (opcional) agrupa o padrão na lista.
@@ -108,6 +110,37 @@ export const PATTERNS = [
     bpm: 118, gate: 90,
     steps: '0 . . . . . . 3 . . . . 7 . . .',
   },
+  // Dois compassos: o segundo responde ao primeiro, então a frase só se repete a cada 32 passos
+  {
+    id: 'bass-call-response', group: 'Dois compassos',
+    name: 'Baixo: pergunta e resposta',
+    bpm: 120, gate: 50,
+    steps: '0 . . 3 . . 0 . 7 . . 3 . 5 . 0  0 . . 3 . . 0 . 7 . . 10 . 12 . 7',
+  },
+  {
+    id: 'acid-2bar', group: 'Dois compassos',
+    name: 'Acid em dois compassos',
+    bpm: 128, gate: 40,
+    steps: '0 . 0 12 . 0 3 . 5 . 0 0 12 . 3 5  0 . 0 12 . 0 3 . 5 . 7 7 12 . 10 .',
+  },
+  {
+    id: 'arp-chord-change', group: 'Dois compassos',
+    name: 'Arpejo que muda de acorde',
+    bpm: 120, gate: 70,
+    steps: '0 3 7 12 0 3 7 12 0 3 7 12 0 3 7 12  -4 0 3 8 -4 0 3 8 -4 0 3 8 -4 0 3 8',
+  },
+  {
+    id: 'techno-rolling-2bar', group: 'Dois compassos',
+    name: 'Techno rolante com virada',
+    bpm: 132, gate: 40,
+    steps: '. 0 0 0 . 0 0 -2 . 0 0 0 . 0 0 3  . 0 0 0 . 0 0 -2 . 0 0 3 . 5 3 0',
+  },
+  {
+    id: 'moroder-2bar', group: 'Dois compassos',
+    name: 'Moroder com variação',
+    bpm: 126, gate: 55,
+    steps: '0 0 12 0 0 0 12 0 -2 -2 10 -2 -4 -4 8 -4  0 0 12 0 0 0 12 0 -2 -2 10 -2 -4 -2 0 7',
+  },
   {
     id: 'random',
     name: 'Aleatório (pentatônica menor)',
@@ -125,16 +158,15 @@ export const PATTERNS = [
 const SCALE = [0, 3, 5, 7, 10, 12, 15]; // pentatônica menor, até a terça menor da oitava de cima
 
 function randomSteps() {
-  return Array.from({ length: 16 }, (_, i) => {
+  return Array.from({ length: STEPS }, (_, i) => {
     const on = i === 0 || Math.random() < 0.6; // o primeiro passo sempre soa
     return on ? SCALE[Math.floor(Math.random() * SCALE.length)] : '.';
   }).join(' ');
 }
 
-// Converte o padrão em 16 passos { on, note }
+// Converte o padrão em 32 passos { on, note }
 export function resolveSteps(pattern) {
   const text = typeof pattern.steps === 'function' ? pattern.steps() : pattern.steps;
   const tokens = text.trim().split(/\s+/);
-  if (tokens.length !== 16) throw new Error(`Padrão "${pattern.name}" não tem 16 passos`);
-  return tokens.map((t) => (t === '.' ? { on: false, note: 0 } : { on: true, note: Number(t) }));
+  return fitBars(tokens, `Padrão "${pattern.name}"`).map((t) => (t === '.' ? { on: false, note: 0 } : { on: true, note: Number(t) }));
 }

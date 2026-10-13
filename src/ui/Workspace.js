@@ -81,6 +81,12 @@ export class Workspace {
     this.#notify();
   }
 
+  // Posição atual do nó no mundo, ou null se ele não existe
+  position(id) {
+    const node = this.#nodes.get(id);
+    return node ? { x: Math.round(node.x), y: Math.round(node.y) } : null;
+  }
+
   removeNode(id) {
     const node = this.#nodes.get(id);
     if (!node) return;

@@ -23,3 +23,19 @@ Arquivos usados (nomes originais → aqui): `Kick-Hard` → `kick`, `Snare-Hard`
 `HatClosed-Hard` → `hat`, `HatOpen-Hard` → `open`.
 
 **Atenção:** se este projeto for distribuído com essas amostras, a GPL se aplica a elas.
+
+## `tr909/`, `tr707/`, `linndrum/`, `dmx/`, `mpc60/` — Roland TR-909, Roland TR-707, LinnDrum, Oberheim DMX, Akai MPC60
+
+Gravações dessas máquinas vindas do repositório **tidal-drum-machines**
+(<https://github.com/ritchse/tidal-drum-machines>, pasta `machines/`), uma coleção feita para o
+TidalCycles/SuperDirt. O repositório **não traz arquivo de licença**, e as gravações são de
+máquinas comerciais: não há permissão formal de redistribuição ou de uso comercial. Servem para
+uso pessoal e estudo; para publicar o projeto, troque-as por amostras com licença clara.
+
+Arquivos usados (kit → origem em `machines/<Máquina>/<pasta>/`, nomes originais → aqui):
+- `tr909`: `Bassdrum-01` → `kick`, `sd01` → `snare`, `hh01` → `hat`, `oh01` → `open`, `Clap` → `clap`,
+  `Tom L` → `tom`, `Rimhot` → `rim`, `Ride` → `ride`.
+- `tr707`: `Bassdrum-01`, `Snaredrum-01`, `Hat Closed`, `Hat Open`, `Clap`, `Tom L`, `Rimshot` (sem prato).
+- `linndrum`: `Bassdrum`, `0Snarderum-01`, `Hat Closed-01`, `Hat Open`, `Clap`, `Tom L-01`, `Sidestick-01`, `Ride`.
+- `dmx`: `Bassdrum-01`, `Snaredrum-01`, `Hat Closed`, `Hat Open`, `Clap`, `Tom L`, `Rim Shot`, `Ride`.
+- `mpc60`: `0 Bassdrum`, `Snare 1`, `Closed Hat`, `Open Hat`, `Clap`, `Tom L`, `Rim Gated`, `Ride`.

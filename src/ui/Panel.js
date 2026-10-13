@@ -1,5 +1,4 @@
 import { portKind } from '../audio/Module.js';
-import { saveModuleState } from '../ModuleStore.js';
 
 const PORT_LABELS = { in: 'entrada', out: 'saída', freq: 'FM', gain: 'ganho', cutoff: 'corte', pitch: 'nota', gate: 'gate', clock: 'clock', return: 'retorno', send: 'envio', ch1: 'canal 1', ch2: 'canal 2', ch3: 'canal 3', ch4: 'canal 4' };
 
@@ -44,22 +43,6 @@ export function createPanel(title, module) {
   titleText.className = 'panel-title-text';
   titleText.textContent = title;
   titleEl.appendChild(titleText);
-
-  // Salvar: guarda os ajustes do módulo; na próxima visita ele abre assim
-  if (module.getState()) {
-    const save = document.createElement('button');
-    save.className = 'save-button';
-    save.textContent = 'Salvar';
-    save.title = 'Salvar os ajustes deste módulo';
-    let timer = null;
-    save.addEventListener('click', () => {
-      const ok = saveModuleState(module.id, module.getState());
-      save.textContent = ok ? 'Salvo ✓' : 'Falhou';
-      clearTimeout(timer);
-      timer = setTimeout(() => { save.textContent = 'Salvar'; }, 1200);
-    });
-    titleEl.appendChild(save);
-  }
 
   const body = document.createElement('div');
   body.className = 'panel-body';

@@ -4,7 +4,8 @@ import { createKnob } from './Knob.js';
 import { createPresetSelect } from './PresetSelect.js';
 import { createPanel } from './Panel.js';
 
-// Painel da Bateria: lista de batidas, nível de cada trilha e a grade de 16 passos por trilha.
+// Painel da Bateria: lista de batidas, nível de cada trilha e a grade de 32 passos por trilha
+// (dois compassos, um embaixo do outro).
 // O andamento é só do sequenciador: escolher uma batida não mexe no BPM.
 export function createDrumPanel(drums) {
   const { element, body, row } = createPanel('Bateria', drums);
@@ -56,18 +57,26 @@ export function createDrumPanel(drums) {
     const label = document.createElement('span');
     label.className = 'drum-label';
     label.textContent = track.name;
-    line.appendChild(label);
+    const bars = [0, 1].map(() => {
+      const bar = document.createElement('div');
+      bar.className = 'drum-bar';
+      return bar;
+    });
+    const stack = document.createElement('div');
+    stack.className = 'drum-bars';
+    stack.append(...bars);
+    line.append(label, stack);
 
     const buttons = track.steps.map((_, i) => {
       const b = document.createElement('button');
       b.className = 'drum-step';
-      if (i > 0 && i % 4 === 0) b.classList.add('group'); // separa os tempos do compasso
+      if (i % 16 > 0 && i % 4 === 0) b.classList.add('group'); // separa os tempos do compasso
       b.addEventListener('click', () => {
         track.steps[i] = !track.steps[i];
         markCustom();
         render();
       });
-      line.appendChild(b);
+      bars[Math.floor(i / 16)].appendChild(b);
       return b;
     });
     const render = () => buttons.forEach((b, i) => b.classList.toggle('on', track.steps[i]));

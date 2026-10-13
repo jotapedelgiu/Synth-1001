@@ -1,5 +1,5 @@
-// Andamento (BPM) compartilhado: o sequenciador o define e quem segue o tempo (delay
-// sincronizado, batidas da bateria) o consulta ou é avisado quando muda.
+// Andamento (BPM) compartilhado: é ajustado na barra superior e quem segue o tempo (sequenciador,
+// bateria, delay sincronizado) o consulta ou é avisado quando muda.
 export class Tempo {
   #bpm = 120;
   #listeners = new Set();

@@ -1,4 +1,6 @@
-// Batidas prontas para a bateria. Cada trilha tem 16 passos de semicolcheia:
+import { fitBars } from './steps.js';
+
+// Batidas prontas para a bateria. Cada trilha tem 16 passos de semicolcheia (um compasso, repetido) ou 32 (dois compassos):
 // "x" = toca, "." = silêncio. Os tempos do compasso 4/4 caem nos passos 1, 5, 9 e 13.
 // `group` (opcional) agrupa a batida na lista; `bpm` (opcional) é o andamento sugerido,
 // aplicado ao sequenciador quando a batida é escolhida.
@@ -18,6 +20,7 @@ export const DRUM_PATTERNS = [
     snare: '....x.......x...',
     hat: 'x.x.x.x.x.x.x.x.',
     open: '..x...x...x...x.',
+    clap: '....x.......x...',
   },
   {
     id: 'hiphop',
@@ -42,6 +45,7 @@ export const DRUM_PATTERNS = [
     snare: '....x.......x...',
     hat: 'x.x.x.x.x.x.x.x.',
     open: '.x...x...x...x..',
+    clap: '....x.......x...',
   },
   {
     id: 'breakbeat',
@@ -58,6 +62,7 @@ export const DRUM_PATTERNS = [
     snare: '....x.......x...',
     hat: 'x...x...x...x...',
     open: '..x...x...x...x.',
+    clap: '....x.......x...',
   },
   {
     id: 'techno-minimal', group: 'Techno', bpm: 125,
@@ -74,6 +79,7 @@ export const DRUM_PATTERNS = [
     snare: '....x.......x...',
     hat: 'xxxxxxxxxxxxxxxx',
     open: '..x...x...x...x.',
+    clap: '....x.......x...',
   },
   {
     id: 'techno-detroit', group: 'Techno', bpm: 126,
@@ -108,6 +114,33 @@ export const DRUM_PATTERNS = [
     open: '...............x',
   },
   {
+    id: 'amen', group: 'Breaks', bpm: 136,
+    name: 'Amen break (136 BPM)',
+    kick: 'x.x.......x.....' + '..xx......x.....',
+    snare: '....x..x.x..x...' + '....x..x.x..x..x',
+    hat: 'x.x.x.x.x.x.x.x.' + 'x.x.x.x.x.x.x.x.',
+    open: '................' + '..............x.',
+  },
+  {
+    id: 'amen-jungle', group: 'Breaks', bpm: 165,
+    name: 'Amen jungle (165 BPM, chimbal em colcheias)',
+    kick: 'x.x.......x.....' + '..xx......x.....',
+    snare: '....x..x.x..x...' + '....x..x.x..x..x',
+    hat: 'x.x.x.x.x.x.x.x.' + 'x.x.x.x.x.x.x.x.',
+    open: '................' + '..............x.',
+  },
+  {
+    id: 'jungle', group: 'Breaks', bpm: 170,
+    name: 'Jungle: tom, rim e prato (170 BPM)',
+    kick: 'x.........x.....' + 'x.....x...x.....',
+    snare: '....x.......x...' + '....x.....x.x...',
+    hat: '................' + '................',
+    open: '................' + '................',
+    rim: '.......x.x......' + '.......x.x.....x',
+    ride: 'x.x.x.x.x.x.x.x.' + 'x.x.x.x.x.x.x.x.',
+    tom: '................' + '............x.xx',
+  },
+  {
     id: 'empty',
     name: 'Vazio',
     kick: '................',
@@ -119,6 +152,5 @@ export const DRUM_PATTERNS = [
 
 // Converte "x..." em [true, false, false, ...]
 export function parseTrack(text) {
-  if (text.length !== 16) throw new Error(`Trilha "${text}" não tem 16 passos`);
-  return [...text].map((c) => c === 'x');
+  return fitBars([...text], `Trilha "${text}"`).map((c) => c === 'x');
 }

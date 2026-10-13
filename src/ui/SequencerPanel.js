@@ -8,7 +8,7 @@ const PX_PER_SEMITONE = 8; // arrastar na vertical muda a nota
 
 const formatNote = (n) => (n > 0 ? `+${n}` : `${n}`);
 
-// Painel do Sequenciador: play/stop, lista de ritmos, BPM, duração do gate e a grade de 16 passos.
+// Painel do Sequenciador: play/stop, lista de ritmos, BPM, duração do gate e a grade de 32 passos (dois compassos).
 // Cada passo tem um botão liga/desliga e uma nota (semitons em relação ao oscilador):
 // arraste na vertical ou use a roda do mouse.
 export function createSequencerPanel(seq) {
@@ -28,16 +28,11 @@ export function createSequencerPanel(seq) {
 
   if (seq.restored) markCustom();
 
-  const bpm = createKnob({
-    min: 40, max: 240, value: seq.bpm, step: 5, label: 'BPM',
-    onChange: (v) => { seq.bpm = v; },
-  });
   const gate = createKnob({
     min: 10, max: 100, value: seq.gateLength, step: 5, label: 'Gate', unit: '%',
     onChange: (v) => { seq.gateLength = v; },
   });
-  row.append(bpm.element, gate.element);
-  seq.onBpmChange((v) => bpm.set(v)); // andamento mudado de fora (ex.: batida de bateria)
+  row.append(gate.element);
 
   const grid = document.createElement('div');
   grid.className = 'steps';
@@ -94,7 +89,6 @@ export function createSequencerPanel(seq) {
     if (!pattern) return;
     seq.load(pattern);
     for (const render of renders) render();
-    bpm.set(seq.bpm); // leva o knob para o andamento do ritmo
     gate.set(seq.gateLength);
   });
 

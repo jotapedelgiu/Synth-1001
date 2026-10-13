@@ -34,27 +34,34 @@ export const midiToHz = (m) => 440 * 2 ** ((m - 69) / 12);
 export class ChordOscillator extends Module {
   static type = 'chord';
 
-  constructor(ctx, { note = 45, chord = 'min', inversion = 0, amp = 60, waveform = 'sine' } = {}) {
+  constructor(ctx, { note = 45, chord = 'min', inversion = 0, amp = 60, waveform = 'sine', unison = 0 } = {}) {
     super(ctx);
     this.note = note; // nota raiz, em número MIDI (45 = lá 2 = 110 Hz)
     this.chord = chord;
     this.inversion = inversion;
     this.amp = amp; // %
     this.waveform = waveform;
+    this.unison = unison; // cents: cada nota ganha duas cópias desafinadas (um pad mais largo)
     // para o osciloscópio tratar este módulo como uma fonte qualquer
     this.realPhase = true;
     this.phase = 0;
 
     this.level = new Gain(ctx, amp / 100);
     this.pitch = new Gain(ctx, 1200); // 1 unidade de entrada = 1200 cents
+    // cada voz (nota do acorde) tem 3 osciladores: o central e os dois desafinados
     this.voices = Array.from({ length: VOICES }, () => {
-      const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       gain.gain.value = 0;
-      osc.connect(gain).connect(this.level.node);
-      this.pitch.connect(osc.detune);
-      osc.start();
-      return { osc, gain };
+      gain.connect(this.level.node);
+      const oscs = [0, -1, 1].map((side) => {
+        const osc = ctx.createOscillator();
+        const mix = ctx.createGain();
+        osc.connect(mix).connect(gain);
+        this.pitch.connect(osc.detune);
+        osc.start();
+        return { osc, mix, side };
+      });
+      return { oscs, gain };
     });
 
     this.inputs.pitch = this.pitch.node;
@@ -118,9 +125,16 @@ export class ChordOscillator extends Module {
     this.#applyWave();
   }
 
+  setUnison(cents) {
+    this.unison = cents;
+    this.#applyNotes(true);
+  }
+
   dispose() {
-    for (const { osc } of this.voices) {
-      try { osc.stop(); } catch { /* já parado */ }
+    for (const { oscs } of this.voices) {
+      for (const { osc } of oscs) {
+        try { osc.stop(); } catch { /* já parado */ }
+      }
     }
   }
 
@@ -129,16 +143,23 @@ export class ChordOscillator extends Module {
     const offsets = this.offsets;
     const now = this.ctx.currentTime;
     const share = LEVEL / offsets.length;
-    this.voices.forEach(({ osc, gain }, i) => {
+    const spread = Math.min(1, this.unison / 5); // as vozes de fora entram aos poucos
+    this.voices.forEach(({ oscs, gain }, i) => {
       const on = i < offsets.length;
-      if (smooth) {
-        osc.frequency.setTargetAtTime(this.rootHz, now, 0.01);
-        if (on) osc.detune.setTargetAtTime(offsets[i] * 100, now, 0.01);
-        gain.gain.setTargetAtTime(on ? share : 0, now, 0.01);
-      } else {
-        osc.frequency.value = this.rootHz;
-        if (on) osc.detune.value = offsets[i] * 100;
-        gain.gain.value = on ? share : 0;
+      if (smooth) gain.gain.setTargetAtTime(on ? share : 0, now, 0.01);
+      else gain.gain.value = on ? share : 0;
+      for (const { osc, mix, side } of oscs) {
+        const level = side === 0 ? 1 - 0.4 * spread : 0.4 * spread;
+        const cents = (on ? offsets[i] * 100 : 0) + side * this.unison;
+        if (smooth) {
+          osc.frequency.setTargetAtTime(this.rootHz, now, 0.01);
+          osc.detune.setTargetAtTime(cents, now, 0.01);
+          mix.gain.setTargetAtTime(level, now, 0.01);
+        } else {
+          osc.frequency.value = this.rootHz;
+          osc.detune.value = cents;
+          mix.gain.value = level;
+        }
       }
     });
   }
@@ -146,18 +167,21 @@ export class ChordOscillator extends Module {
   #applyWave() {
     const { real, imag } = coefficients(this.waveform, 0);
     const wave = this.ctx.createPeriodicWave(real, imag, { disableNormalization: true });
-    for (const { osc } of this.voices) osc.setPeriodicWave(wave);
+    for (const { oscs } of this.voices) {
+      for (const { osc } of oscs) osc.setPeriodicWave(wave);
+    }
   }
 
   getState() {
-    const { note, chord, inversion, amp, waveform } = this;
-    return { note, chord, inversion, amp, waveform };
+    const { note, chord, inversion, amp, waveform, unison } = this;
+    return { note, chord, inversion, amp, waveform, unison };
   }
 
   setState(s) {
     if (s.waveform) this.setWaveform(s.waveform);
     if (CHORDS.some((c) => c.id === s.chord)) this.chord = s.chord;
     this.inversion = s.inversion ?? this.inversion;
+    this.unison = s.unison ?? this.unison;
     this.setNote(s.note ?? this.note); // reafina as vozes com o acorde e a inversão novos
     this.setAmp(s.amp ?? this.amp);
   }

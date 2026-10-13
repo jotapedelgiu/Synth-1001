@@ -1,6 +1,7 @@
 import { MODULE_TYPES } from './moduleTypes.js';
 import { Patch } from './Patch.js';
 import { Tempo } from './Tempo.js';
+import { Bass } from './modules/Bass.js';
 import { Gain } from './modules/Gain.js';
 import { ChordOscillator } from './modules/ChordOscillator.js';
 import { Oscillator } from './modules/Oscillator.js';
@@ -75,11 +76,12 @@ export class Synth {
   }
 
   // Cria um módulo novo do tipo dado, já registrado no patch. Retorna { module, title }.
-  add(type) {
+  // `id` fixa o identificador (usado ao carregar uma cena salva); sem ele, um id livre é escolhido.
+  add(type, id = this.patch.uniqueId(type)) {
     const def = MODULE_TYPES.find((t) => t.type === type);
     if (!def) throw new Error(`Tipo de módulo desconhecido: ${type}`);
     const module = def.create(this.ctx, { tempo: this.tempo });
-    this.patch.add(this.patch.uniqueId(type), module);
+    this.patch.add(id, module);
     return { module, title: this.#title(def) };
   }
 
@@ -102,8 +104,8 @@ export class Synth {
     if (!this.#fed.has(scopeId)) {
       const upstream = this.patch.upstream(scopeId);
       this.#fed.set(scopeId, {
-        // fontes de sinal com `freq` e `amp`: osciladores e geradores de acordes
-        oscillators: upstream.filter((m) => m instanceof Oscillator || m instanceof ChordOscillator),
+        // fontes de sinal com `freq` e `amp`: osciladores, geradores de acordes e baixos
+        oscillators: upstream.filter((m) => m instanceof Oscillator || m instanceof ChordOscillator || m instanceof Bass),
         hasMic: upstream.some((m) => m instanceof Microphone),
       });
     }
