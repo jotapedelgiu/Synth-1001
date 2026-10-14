@@ -1,6 +1,6 @@
 import { portKind } from '../audio/Module.js';
 
-const PORT_LABELS = { in: 'entrada', out: 'saída', freq: 'FM', gain: 'ganho', cutoff: 'corte', pitch: 'nota', gate: 'gate', clock: 'clock', return: 'retorno', send: 'envio', ch1: 'canal 1', ch2: 'canal 2', ch3: 'canal 3', ch4: 'canal 4' };
+const PORT_LABELS = { in: 'entrada', out: 'saída', freq: 'FM', gain: 'ganho', cutoff: 'corte', pitch: 'nota', gate: 'gate', clock: 'clock', key: 'tom', accent: 'accent', return: 'retorno', send: 'envio', ch1: 'canal 1', ch2: 'canal 2', ch3: 'canal 3', ch4: 'canal 4' };
 
 // Conector (jack) de uma porta. O CableLayer usa os data-attributes para achar o módulo/porta.
 function createJack(module, port, dir) {

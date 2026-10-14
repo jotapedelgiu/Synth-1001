@@ -55,9 +55,10 @@ export class Hud {
     document.body.appendChild(this.element);
   }
 
-  // state: { started, status }
-  render({ started, status }) {
-    this.start.hidden = started;
+  // state: { started, paused, status } — o botão vira pausa/play depois que o áudio é ativado
+  render({ started, paused, status }) {
+    this.start.textContent = !started ? 'Ativar áudio' : paused ? '▶ Tocar' : '⏸ Pausar';
+    this.start.title = 'Pausa/retoma o áudio (barra de espaço)';
     this.status.textContent = status;
   }
 

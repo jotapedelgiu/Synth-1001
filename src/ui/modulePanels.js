@@ -1,7 +1,15 @@
+import { createAcidPanel } from './AcidPanel.js';
 import { createBassPanel } from './BassPanel.js';
 import { createChordPanel } from './ChordPanel.js';
 import { createDelayPanel } from './DelayPanel.js';
 import { createDrumPanel } from './DrumPanel.js';
+import {
+  createChorusPanel,
+  createCompressorPanel,
+  createDistortionPanel,
+  createEqualizerPanel,
+  createReverbPanel,
+} from './EffectPanels.js';
 import { createEnvelopePanel } from './EnvelopePanel.js';
 import { createFilterPanel } from './FilterPanel.js';
 import { createMixer4Panel } from './Mixer4Panel.js';
@@ -27,11 +35,17 @@ export function createModulePanel(module, { title, refresh, tempo }) {
   switch (module.moduleType) {
     case 'oscillator': panel = createOscillatorPanel('Onda', module, refresh); break;
     case 'bass': panel = createBassPanel(module, refresh); break;
+    case 'acid': panel = createAcidPanel(module, refresh); break;
     case 'chord': panel = createChordPanel(module, refresh); break;
     case 'filter': panel = createFilterPanel(module); break;
     case 'envelope': panel = createEnvelopePanel(module); break;
     case 'delay': panel = createDelayPanel(module, () => tempo.bpm); break;
     case 'phaser': panel = createPhaserPanel(module); break;
+    case 'reverb': panel = createReverbPanel(module); break;
+    case 'distortion': panel = createDistortionPanel(module); break;
+    case 'chorus': panel = createChorusPanel(module); break;
+    case 'compressor': panel = createCompressorPanel(module); break;
+    case 'equalizer': panel = createEqualizerPanel(module); break;
     case 'mixer': panel = createMixerPanel(module); break;
     case 'mixer4': panel = createMixer4Panel(module); break;
     case 'speaker': panel = createSpeakerPanel(module); break;

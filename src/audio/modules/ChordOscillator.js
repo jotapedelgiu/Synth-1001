@@ -1,4 +1,5 @@
 import { Module } from '../Module.js';
+import { NoteOut } from '../EventPorts.js';
 import { coefficients } from '../waveforms.js';
 import { Gain } from './Gain.js';
 
@@ -29,7 +30,8 @@ export const midiToName = (m) => `${NAMES[m % 12]}${Math.floor(m / 12) - 1}`;
 export const midiToHz = (m) => 440 * 2 ** ((m - 69) / 12);
 
 // Gerador de acordes: um grupo de osciladores afinados nos intervalos do acorde, somados na saída.
-// Portas: `pitch` (transpõe o acorde inteiro; 1 unidade = 1 oitava, como no Oscilador) e `out`.
+// Portas: `pitch` (transpõe o acorde inteiro; 1 unidade = 1 oitava, como no Oscilador), `out` e
+// `key` (evento: a nota raiz; ligada ao Baixo, ele passa a tocar no tom do acorde).
 // Ligando o sequenciador em `pitch`, as notas dele viram uma progressão de acordes.
 export class ChordOscillator extends Module {
   static type = 'chord';
@@ -66,6 +68,7 @@ export class ChordOscillator extends Module {
 
     this.inputs.pitch = this.pitch.node;
     this.outputs.out = this.level.node;
+    this.outputs.key = new NoteOut(note); // a nota raiz, para o Baixo tocar no mesmo tom
     this.#applyWave();
     this.#applyNotes(false);
   }
@@ -103,6 +106,7 @@ export class ChordOscillator extends Module {
   setNote(midi) {
     this.note = midi;
     this.#applyNotes(true);
+    this.outputs.key.set(midi);
   }
 
   setChord(id) {

@@ -19,5 +19,6 @@ export function createWaveformButtons(module) {
     for (const [name, b] of buttons) b.classList.toggle('active', name === module.waveform);
   };
   render();
+  element.refresh = render; // para quem muda a forma de onda por fora (ex.: presets)
   return element;
 }

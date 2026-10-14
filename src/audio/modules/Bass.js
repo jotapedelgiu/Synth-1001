@@ -1,5 +1,5 @@
 import { Module } from '../Module.js';
-import { GateIn } from '../EventPorts.js';
+import { GateIn, NoteIn } from '../EventPorts.js';
 import { coefficients } from '../waveforms.js';
 
 const ATTACK_TAU = 0.004; // s: ataque curto, sem clique
@@ -14,7 +14,8 @@ const DECAY_TAUS = 3; // o decaimento chega a ~95% do caminho no tempo do botão
 //                       └ envelope do filtro         └ envelope de volume (decay/sustain)
 //
 // Portas: `pitch` (nota, em oitavas, como no Oscilador: o sequenciador liga aqui), `gate`
-// (evento: cada nota do sequenciador dispara os dois envelopes) e `out`.
+// (evento: cada nota do sequenciador dispara os dois envelopes), `key` (evento: o tom, vindo
+// da saída `key` do gerador de acordes: a nota base passa a ser a raiz do acorde) e `out`.
 // O envelope do filtro abre o corte no ataque e o fecha no decaimento: o "pluck" do baixo.
 export class Bass extends Module {
   static type = 'bass';
@@ -31,6 +32,8 @@ export class Bass extends Module {
     this.realPhase = true;
     this.phase = 0;
     this.onGate = null; // callback(gateOn) para a interface
+    this.key = null; // nota (MIDI) recebida pela porta `key`, ou null se nada estiver ligado
+    this.onKey = null; // callback() quando o tom muda, para a interface
 
     const p = this.params;
     this.main = ctx.createOscillator();
@@ -73,6 +76,7 @@ export class Bass extends Module {
 
     this.inputs.pitch = this.pitch;
     this.inputs.gate = new GateIn({ on: (when) => this.#on(when), off: (when) => this.#off(when) });
+    this.inputs.key = new NoteIn((note) => this.setKey(note));
     this.outputs.out = this.out;
 
     this.#applyWave();
@@ -84,7 +88,23 @@ export class Bass extends Module {
 
   // para o osciloscópio e o status
   get freq() {
-    return Math.round(this.params.freq);
+    return Math.round(this.baseHz);
+  }
+
+  // Frequência que a nota base realmente tem. Sem tom ligado é a do knob; com tom, é a nota
+  // recebida na oitava mais próxima do knob (que passa a escolher só a oitava).
+  get baseHz() {
+    const { freq } = this.params;
+    if (this.key == null) return freq;
+    const keyHz = 440 * 2 ** ((this.key - 69) / 12);
+    return keyHz * 2 ** Math.round(Math.log2(freq / keyHz));
+  }
+
+  // Tom vindo da porta `key` (número MIDI), ou null para voltar à nota do knob
+  setKey(note) {
+    this.key = note;
+    this.#applyFreq();
+    this.onKey?.();
   }
 
   get amp() {
@@ -124,6 +144,11 @@ export class Bass extends Module {
 
   setFreq(hz) {
     this.params.freq = hz;
+    this.#applyFreq();
+  }
+
+  #applyFreq() {
+    const hz = this.baseHz;
     const now = this.ctx.currentTime;
     this.main.frequency.setTargetAtTime(hz, now, 0.01);
     this.subOsc.frequency.setTargetAtTime(hz / 2, now, 0.01);

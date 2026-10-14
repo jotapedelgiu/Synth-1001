@@ -17,16 +17,8 @@ const HUD_HEIGHT = 56; // faixa da barra superior
 // `title` troca o título padrão do painel.
 const DEFAULT_NODES = {
   seq: { x: 0, y: 0 },
-  mic: { x: 0, y: 400 },
-  osc1: { x: 400, y: 0, title: 'Onda 1' },
-  osc2: { x: 400, y: 240, title: 'Onda 2' },
-  mixer: { x: 740, y: 170 },
-  filter: { x: 880, y: 230 },
-  env: { x: 1150, y: 290 },
-  drums: { x: 1150, y: 640 },
-  delay: { x: 1540, y: 350 },
-  speaker: { x: 1790, y: 380 },
-  scope: { x: 1790, y: 480 },
+  mixer: { x: 460, y: 0 },
+  speaker: { x: 1200, y: 0 },
 };
 
 // O AudioContext nasce suspenso (sem gesto do usuário) e é liberado no clique em "Ativar áudio"
@@ -39,11 +31,7 @@ const workspace = new Workspace(document.body, { storageKey: 'osciloscope.layout
 const menu = new ContextMenu();
 
 const hud = new Hud({
-  onStart: async () => {
-    await ctx.resume();
-    started = true;
-    refresh();
-  },
+  onStart: () => toggleAudio(),
   onZoom: (factor) => workspace.zoomBy(factor),
   onFit: () => workspace.fit(),
   onReset: () => workspace.resetLayout(),
@@ -52,7 +40,15 @@ const hud = new Hud({
 });
 
 function refresh() {
-  hud.render({ started, status: synth.statusText() });
+  hud.render({ started, paused: ctx.state !== 'running', status: synth.statusText() });
+}
+ctx.addEventListener('statechange', refresh);
+
+// Primeira vez ativa o áudio (precisa de um gesto do usuário); depois alterna pausa/play
+async function toggleAudio() {
+  if (!started) started = true;
+  else if (ctx.state === 'running') return ctx.suspend();
+  await ctx.resume();
 }
 synth.patch.onChange(refresh);
 synth.tempo.onChange((bpm) => hud.setBpm(bpm));
@@ -176,12 +172,37 @@ workspace.onContextMenu(({ x, y, nodeId }) => {
   menu.show(x, y, [{ header: 'Adicionar módulo' }, ...entries]);
 });
 
-// Espaço = gate de todos os envelopes ligados
+// Espaço = play/stop dos sequenciadores (a bateria segue o clock deles). Se o áudio ainda estiver
+// desligado ou pausado, só o religa e já começa a tocar.
+function sequencers() {
+  return synth.patch.modules.filter((m) => m.moduleType === 'sequencer');
+}
+window.addEventListener('keydown', async (e) => {
+  if (e.code !== 'Space' || e.shiftKey) return;
+  if (e.target.closest?.('input:not([type=range]):not([type=checkbox]), textarea, [contenteditable]')) return;
+  e.preventDefault(); // evita que o espaço "clique" no botão que estiver com foco
+  if (e.repeat) return;
+  started = true; // a tecla já é um gesto do usuário, então também serve para ativar o áudio
+  if (ctx.state !== 'running') await ctx.resume();
+  const all = sequencers();
+  const playing = all.some((s) => s.playing);
+  for (const seq of all) {
+    if (playing) seq.stop();
+    else seq.play();
+  }
+  refresh();
+});
+window.addEventListener('keyup', (e) => {
+  // o clique em botões com foco dispara no keyup; bloqueia para o espaço ser só pausa/play
+  if (e.code === 'Space' && !e.target.closest?.('input:not([type=range]):not([type=checkbox]), textarea, [contenteditable]')) e.preventDefault();
+});
+
+// Shift+Espaço = gate de todos os envelopes ligados
 function envelopes() {
   return synth.patch.modules.filter((m) => m.moduleType === 'envelope' && m.enabled);
 }
 window.addEventListener('keydown', (e) => {
-  if (e.code !== 'Space') return;
+  if (e.code !== 'Space' || !e.shiftKey) return;
   const active = envelopes();
   if (!active.length) return;
   e.preventDefault();

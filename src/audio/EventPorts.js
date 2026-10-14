@@ -43,6 +43,42 @@ export class GateIn {
   }
 }
 
+// --- note: uma nota (número MIDI) que vale até mudar (ex.: raiz do acorde → tom do baixo) ---
+// Quem se liga recebe na hora a nota atual; ao desligar, recebe `null` (sem nota).
+
+export class NoteOut extends EventOut {
+  kind = 'note';
+  #note;
+
+  constructor(note = null) {
+    super();
+    this.#note = note;
+  }
+
+  set(note) {
+    this.#note = note;
+    this._each((t) => t.set(note));
+  }
+
+  connect(target) {
+    super.connect(target);
+    target.set(this.#note);
+  }
+
+  disconnect(target) {
+    super.disconnect(target);
+    target.set(null);
+  }
+}
+
+export class NoteIn {
+  kind = 'note';
+
+  constructor(onNote) {
+    this.set = onNote;
+  }
+}
+
 // --- clock: um pulso por passo (ex.: sequenciador → bateria) ---
 // tick(when, step, duration): `step` é o número do passo (0–15) e `duration` a duração dele em segundos
 

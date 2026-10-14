@@ -378,8 +378,38 @@ canvas {
   user-select: none;
 }
 
-.step-note.muted {
+.step-note.muted,
+.step-flags.muted {
   opacity: 0.4;
+}
+
+/* slide (S) e accent (A) de cada passo */
+.step-flags {
+  display: flex;
+}
+
+.panel .step-flag {
+  flex: 1;
+  padding: 1px 0;
+  font-size: 9px;
+  color: #33ff6699;
+  border-color: #33ff6655;
+}
+
+.panel .step-flag + .step-flag {
+  border-left-width: 0;
+}
+
+.panel .step-flag-slide.on {
+  background: #33d6ff;
+  border-color: #33d6ff;
+  color: #000;
+}
+
+.panel .step-flag-accent.on {
+  background: #ffb000;
+  border-color: #ffb000;
+  color: #000;
 }
 
 /* --- Tela do osciloscópio (dentro do painel) --- */
@@ -439,6 +469,24 @@ canvas {
 
 .cable-clock {
   stroke-dasharray: calc(3px * var(--zoom, 1)) calc(6px * var(--zoom, 1));
+  stroke-width: calc(3px * var(--zoom, 1));
+}
+
+/* --- Portas e cabos de nota (o tom do acorde): rosa, tracejado longo --- */
+.jack-note .jack-dot {
+  border-color: #ff6b8b;
+}
+
+.jack-note.jack-out .jack-dot {
+  background: #ff6b8b;
+}
+
+.jack-note .jack-label {
+  color: #ff6b8b;
+}
+
+.cable-note {
+  stroke-dasharray: calc(16px * var(--zoom, 1)) calc(5px * var(--zoom, 1));
   stroke-width: calc(3px * var(--zoom, 1));
 }
 

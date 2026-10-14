@@ -1,6 +1,11 @@
+import { Acid } from './modules/Acid.js';
 import { Bass } from './modules/Bass.js';
 import { ChordOscillator } from './modules/ChordOscillator.js';
+import { Chorus } from './modules/Chorus.js';
+import { Compressor } from './modules/Compressor.js';
 import { Delay } from './modules/Delay.js';
+import { Distortion } from './modules/Distortion.js';
+import { Equalizer } from './modules/Equalizer.js';
 import { DrumMachine } from './modules/DrumMachine.js';
 import { Envelope } from './modules/Envelope.js';
 import { Filter } from './modules/Filter.js';
@@ -12,6 +17,7 @@ import { Mixer4 } from './modules/Mixer4.js';
 import { Oscillator } from './modules/Oscillator.js';
 import { FFT_SIZE, Scope } from './modules/Scope.js';
 import { Phaser } from './modules/Phaser.js';
+import { Reverb } from './modules/Reverb.js';
 import { Sequencer } from './modules/Sequencer.js';
 import { Speaker } from './modules/Speaker.js';
 
@@ -27,6 +33,7 @@ export const MODULE_TYPES = [
     },
   },
   { type: Bass.type, label: 'Baixo', group: 'Fontes', create: (ctx) => new Bass(ctx) },
+  { type: Acid.type, label: 'Synth acid', group: 'Fontes', create: (ctx) => new Acid(ctx) },
   { type: ChordOscillator.type, label: 'Acordes', group: 'Fontes', create: (ctx) => new ChordOscillator(ctx) },
   { type: Sequencer.type, label: 'Sequenciador', group: 'Fontes', create: (ctx, { tempo }) => new Sequencer(ctx, tempo) },
   { type: DrumMachine.type, label: 'Bateria', group: 'Fontes', create: (ctx) => new DrumMachine(ctx) },
@@ -39,6 +46,11 @@ export const MODULE_TYPES = [
   { type: Envelope.type, label: 'Envelope ADSR', group: 'Processadores', create: (ctx) => new Envelope(ctx) },
   { type: Delay.type, label: 'Delay', group: 'Processadores', create: (ctx, { tempo }) => new Delay(ctx, { tempo }) },
   { type: Phaser.type, label: 'Phaser', group: 'Processadores', create: (ctx) => new Phaser(ctx) },
+  { type: Reverb.type, label: 'Reverb', group: 'Processadores', create: (ctx) => new Reverb(ctx) },
+  { type: Distortion.type, label: 'Distorção', group: 'Processadores', create: (ctx) => new Distortion(ctx) },
+  { type: Chorus.type, label: 'Chorus', group: 'Processadores', create: (ctx) => new Chorus(ctx) },
+  { type: Compressor.type, label: 'Compressor', group: 'Processadores', create: (ctx) => new Compressor(ctx) },
+  { type: Equalizer.type, label: 'Equalizador', group: 'Processadores', create: (ctx) => new Equalizer(ctx) },
   { type: Gain.type, label: 'Mixer', group: 'Processadores', create: (ctx) => new Gain(ctx) },
   { type: Mixer4.type, label: 'Mixer 4 canais', title: 'Mixer 4 canais', group: 'Processadores', create: (ctx) => new Mixer4(ctx) },
 

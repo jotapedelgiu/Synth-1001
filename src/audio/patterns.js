@@ -5,6 +5,8 @@ import { STEPS, fitBars } from './steps.js';
 //
 // `steps`: 16 posições (um compasso, repetido) ou 32 (dois compassos), separadas por espaço. "." = passo desligado; um número = passo ligado
 // naquela nota, em semitons acima (ou abaixo, se negativo) da frequência do oscilador.
+// Um passo ligado pode levar marcas: "~" = slide (a nota escorrega até a próxima, sem soltar)
+// e "!" = accent (mais forte). Ex.: "0! . 0~ 12".
 // `bpm` e `gate` (% do passo) são o andamento e a duração das notas sugeridos; null = não muda.
 // `group` (opcional) agrupa o padrão na lista.
 export const PATTERNS = [
@@ -43,6 +45,134 @@ export const PATTERNS = [
     name: 'Acid (estilo TB-303)',
     bpm: 128, gate: 40,
     steps: '0 . 0 12 . 0 3 . 5 . 0 0 12 . 3 5',
+  },
+  // Com slide (~) e accent (!): feitos para o Synth acid (ligue também a saída "accent")
+  {
+    id: 'acid-bubble', group: 'Acid',
+    name: 'Acid: bolhas (slide e accent)',
+    bpm: 126, gate: 50,
+    steps: '0! 0 12~ 0 . 0~ 3! . 0 12! 0~ 7 . 0 3~ 5!',
+  },
+  {
+    id: 'acid-squelch', group: 'Acid',
+    name: 'Acid: squelch em oitavas',
+    bpm: 130, gate: 45,
+    steps: '0! 12~ 0 0 12! . 0~ 12 0! 0 15~ 12 . 0 10~ 12!',
+  },
+  {
+    id: 'acid-melody', group: 'Acid',
+    name: 'Acid: melodia em dois compassos',
+    bpm: 124, gate: 55,
+    steps: '0! . 7~ 12 . 10~ 7! . 3 . 5~ 7 . 0! 3~ 5  0! . 7~ 12 . 15~ 12! . 10 . 7~ 5 . 3! 5~ 0',
+  },
+  {
+    id: 'acid-chicago', group: 'Acid',
+    name: 'Acid: Chicago (Acid Tracks)',
+    bpm: 120, gate: 50,
+    steps: '0! . 0 12~ . 0 0! . 3~ 0 . 0! 12 . 0~ 7',
+  },
+  {
+    id: 'acid-rolling', group: 'Acid',
+    name: 'Acid: rolante (16avos)',
+    bpm: 132, gate: 40,
+    steps: '0! 0 0 0~ 12 0 0! 0 0 0~ 7 0! 0 0 3~ 0',
+  },
+  {
+    id: 'acid-offbeat', group: 'Acid',
+    name: 'Acid: contratempo com slides',
+    bpm: 126, gate: 45,
+    steps: '. . 0! . . 12~ . . . . 0! . . 7~ 5 .',
+  },
+  {
+    id: 'acid-sparse', group: 'Acid',
+    name: 'Acid: esparso e hipnótico',
+    bpm: 122, gate: 60,
+    steps: '0! . . . 0~ . . 12 . . 0! . . . 3~ .',
+  },
+  {
+    id: 'acid-jump', group: 'Acid',
+    name: 'Acid: saltos de oitava',
+    bpm: 128, gate: 40,
+    steps: '0! 12 0 12~ 0! 12 0 24~ 0! 12 0 12~ 0! 12~ 24! 12',
+  },
+  {
+    id: 'acid-minor', group: 'Acid',
+    name: 'Acid: escala menor (dois compassos)',
+    bpm: 125, gate: 50,
+    steps: '0! . 3 0~ 7 . 0! 10~ . 7 5~ 3 . 0 5! .  0! . 3 0~ 7 . 12! 10~ . 15~ 12 10 . 7 5! 3~',
+  },
+  {
+    id: 'acid-fast', group: 'Acid',
+    name: 'Acid: acelerado (hard acid)',
+    bpm: 145, gate: 35,
+    steps: '0! 0 12 0 0! 0~ 12 0 0! 0 15~ 0 0! 12 10~ 7',
+  },
+  {
+    id: 'acid-tension', group: 'Acid',
+    name: 'Acid: tensão (dois compassos)',
+    bpm: 130, gate: 45,
+    steps: '0! 0 0 . 0~ 0 1! 0 0 . 0! 0 0 1~ 0 .  0! 0 0 . 0~ 0 6! 0 0 . 7! 0 0 6~ 1 0',
+  },
+  // Linhas de baixo, para o módulo Baixo (a nota 0 é a nota base dele)
+  {
+    id: 'bass-house-offbeat', group: 'Linhas de baixo',
+    name: 'House: baixo no contratempo',
+    bpm: 124, gate: 45,
+    steps: '. . 0 . . . 0 . . . 0 . . . 3 .',
+  },
+  {
+    id: 'bass-house-rolling', group: 'Linhas de baixo',
+    name: 'House: rolante (16avos)',
+    bpm: 124, gate: 40,
+    steps: '. 0 0 . . 0 0 -2 . 0 0 . . 0 3 5',
+  },
+  {
+    id: 'bass-deep', group: 'Linhas de baixo',
+    name: 'Deep house: notas longas',
+    bpm: 120, gate: 80,
+    steps: '0 . . . . . 0 . 3 . . . . . 5 .',
+  },
+  {
+    id: 'bass-disco', group: 'Linhas de baixo',
+    name: 'Disco: oitavas saltitantes',
+    bpm: 118, gate: 55,
+    steps: '0 . 12 . 0 . 12 . 5 . 17 . 7 . 19 .',
+  },
+  {
+    id: 'bass-funk-slap', group: 'Linhas de baixo',
+    name: 'Funk: sincopado',
+    bpm: 98, gate: 35,
+    steps: '0 . . 0 . . 12 . 0 . 3 . . 5 . 7',
+  },
+  {
+    id: 'bass-garage', group: 'Linhas de baixo',
+    name: 'UK garage: sub deslocado',
+    bpm: 130, gate: 60,
+    steps: '0 . . . . . 0 . . . 3 . . . . 0',
+  },
+  {
+    id: 'bass-reggae', group: 'Linhas de baixo',
+    name: 'Dub / reggae: baixo pesado',
+    bpm: 76, gate: 85,
+    steps: '0 . . . . . 0 . . . 3 . 5 . . .',
+  },
+  {
+    id: 'bass-walking', group: 'Linhas de baixo',
+    name: 'Walking bass (dois compassos)',
+    bpm: 110, gate: 70,
+    steps: '0 . 4 . 7 . 9 . 12 . 9 . 7 . 4 .  5 . 9 . 12 . 14 . 12 . 9 . 7 . 4 .',
+  },
+  {
+    id: 'bass-driving', group: 'Linhas de baixo',
+    name: 'Rock: colcheias constantes',
+    bpm: 128, gate: 60,
+    steps: '0 . 0 . 0 . 0 . 3 . 3 . 5 . 5 .',
+  },
+  {
+    id: 'bass-progression', group: 'Linhas de baixo',
+    name: 'Progressão i – VI – III – VII (dois compassos)',
+    bpm: 122, gate: 50,
+    steps: '0 . 0 . . 0 . 0 -4 . -4 . . -4 . -4  3 . 3 . . 3 . 3 -2 . -2 . . -2 . -2',
   },
   {
     id: 'funk',
@@ -164,9 +294,12 @@ function randomSteps() {
   }).join(' ');
 }
 
-// Converte o padrão em 32 passos { on, note }
+// Converte o padrão em 32 passos { on, note, slide, accent }
 export function resolveSteps(pattern) {
   const text = typeof pattern.steps === 'function' ? pattern.steps() : pattern.steps;
   const tokens = text.trim().split(/\s+/);
-  return fitBars(tokens, `Padrão "${pattern.name}"`).map((t) => (t === '.' ? { on: false, note: 0 } : { on: true, note: Number(t) }));
+  return fitBars(tokens, `Padrão "${pattern.name}"`).map((t) => {
+    if (t === '.') return { on: false, note: 0, slide: false, accent: false };
+    return { on: true, note: parseInt(t, 10), slide: t.includes('~'), accent: t.includes('!') };
+  });
 }

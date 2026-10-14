@@ -1,14 +1,11 @@
 import { MODULE_TYPES } from './moduleTypes.js';
 import { Patch } from './Patch.js';
 import { Tempo } from './Tempo.js';
+import { Acid } from './modules/Acid.js';
 import { Bass } from './modules/Bass.js';
-import { Gain } from './modules/Gain.js';
 import { ChordOscillator } from './modules/ChordOscillator.js';
+import { Mixer4 } from './modules/Mixer4.js';
 import { Oscillator } from './modules/Oscillator.js';
-import { Filter } from './modules/Filter.js';
-import { Delay } from './modules/Delay.js';
-import { DrumMachine } from './modules/DrumMachine.js';
-import { Envelope } from './modules/Envelope.js';
 import { Sequencer } from './modules/Sequencer.js';
 import { Speaker } from './modules/Speaker.js';
 import { Microphone } from './modules/Microphone.js';
@@ -17,15 +14,10 @@ import { FFT_SIZE, Scope } from './modules/Scope.js';
 export { FFT_SIZE };
 const MIC_HYSTERESIS = 0.01;
 
-// Cria os módulos, registra no Patch e liga o patch inicial:
+// Cria o patch inicial, que é um ponto de partida limpo: um sequenciador solto e um mixer
+// ligado à saída de áudio.
 //
-//   osc1 ─┐
-//         ├─ mixer ─ filter ─ envelope ─ delay ─┬─ speaker
-//   osc2 ─┘                      ▲              └─ scope
-//                                │ gate
-//   sequencer ── gate ───────────┘
-//             ├─ pitch ──▶ osc1, osc2 (nota)
-//             └─ clock ──▶ drums ──▶ delay
+//   sequencer          mixer ─ speaker
 //
 // Depois disso, quem manda é o Patch: os cabos podem ser refeitos pela interface e módulos
 // podem ser adicionados (add) e removidos (remove).
@@ -39,40 +31,14 @@ export class Synth {
     this.patch = new Patch();
     const add = (id, module) => this.patch.add(id, module);
 
-    // O osc1 é a referência do trigger (fase = posição horizontal);
-    // nos demais a fase é real, relativa ao osc1.
-    this.osc1 = add('osc1', new Oscillator(ctx, { freq: 110, amp: 80 }));
-    this.osc2 = add('osc2', new Oscillator(ctx, { freq: 220, amp: 40, realPhase: true }));
-    this.mixer = add('mixer', new Gain(ctx));
-    this.filter = add('filter', new Filter(ctx));
-    this.envelope = add('env', new Envelope(ctx));
-    this.envelope.setEnabled(true); // com o gate ligado ao sequenciador, só soa nas notas (senão fica um drone)
     this.sequencer = add('seq', new Sequencer(ctx, this.tempo));
-    this.delay = add('delay', new Delay(ctx, { tempo: this.tempo }));
-    this.drums = add('drums', new DrumMachine(ctx));
-    this.mic = add('mic', new Microphone(ctx));
+    this.mixer = add('mixer', new Mixer4(ctx));
     this.speaker = add('speaker', new Speaker(ctx));
-    this.scope = add('scope', new Scope(ctx, FFT_SIZE));
 
-    this.patch.connect('osc1', 'out', 'mixer', 'in');
-    this.patch.connect('osc2', 'out', 'mixer', 'in');
-    this.patch.connect('mixer', 'out', 'filter', 'in');
-    this.patch.connect('filter', 'out', 'env', 'in');
-    this.patch.connect('seq', 'gate', 'env', 'gate');
-    this.patch.connect('seq', 'clock', 'drums', 'clock');
-    this.patch.connect('drums', 'out', 'delay', 'in');
-    this.patch.connect('seq', 'pitch', 'osc1', 'pitch');
-    this.patch.connect('seq', 'pitch', 'osc2', 'pitch');
-    this.patch.connect('env', 'out', 'delay', 'in');
-    this.patch.connect('delay', 'out', 'speaker', 'in');
-    this.patch.connect('delay', 'out', 'scope', 'in');
+    this.patch.connect('mixer', 'out', 'speaker', 'in');
 
     // Os cabos mudam raramente; o que alimenta o osciloscópio é recalculado só quando mudam
     this.patch.onChange(() => this.#fed.clear());
-
-    // Todos os osciladores iniciam no mesmo instante, para a fase relativa fazer sentido
-    const t0 = ctx.currentTime + 0.05;
-    for (const osc of [this.osc1, this.osc2]) osc.start(t0);
   }
 
   // Cria um módulo novo do tipo dado, já registrado no patch. Retorna { module, title }.
@@ -104,8 +70,8 @@ export class Synth {
     if (!this.#fed.has(scopeId)) {
       const upstream = this.patch.upstream(scopeId);
       this.#fed.set(scopeId, {
-        // fontes de sinal com `freq` e `amp`: osciladores, geradores de acordes e baixos
-        oscillators: upstream.filter((m) => m instanceof Oscillator || m instanceof ChordOscillator || m instanceof Bass),
+        // fontes de sinal com `freq` e `amp`: osciladores, geradores de acordes, baixos e synths acid
+        oscillators: upstream.filter((m) => m instanceof Oscillator || m instanceof ChordOscillator || m instanceof Bass || m instanceof Acid),
         hasMic: upstream.some((m) => m instanceof Microphone),
       });
     }

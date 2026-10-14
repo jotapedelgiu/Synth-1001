@@ -1,6 +1,6 @@
 const NS = 'http://www.w3.org/2000/svg';
 // cabos de evento têm cor fixa (e tracejado, no CSS); os de áudio alternam as demais
-const KIND_COLORS = { gate: '#ffb000', clock: '#33d6ff' };
+const KIND_COLORS = { gate: '#ffb000', clock: '#33d6ff', note: '#ff6b8b' };
 const COLORS = ['#33ff66', '#c8ff33', '#ff5fd2', '#b388ff', '#ff7a59'];
 
 // Camada SVG sobre a tela que desenha os cabos do Patch e permite editá-los:

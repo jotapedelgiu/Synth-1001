@@ -10,7 +10,8 @@ const formatNote = (n) => (n > 0 ? `+${n}` : `${n}`);
 
 // Painel do Sequenciador: play/stop, lista de ritmos, BPM, duração do gate e a grade de 32 passos (dois compassos).
 // Cada passo tem um botão liga/desliga e uma nota (semitons em relação ao oscilador):
-// arraste na vertical ou use a roda do mouse.
+// arraste na vertical ou use a roda do mouse. Embaixo, S = slide (escorrega até o próximo passo)
+// e A = accent (mais forte), usados pelo Synth acid.
 export function createSequencerPanel(seq) {
   const { element, body, row } = createPanel('Sequenciador', seq);
 
@@ -71,13 +72,34 @@ export function createSequencerPanel(seq) {
       setNote(step.note + (e.deltaY < 0 ? 1 : -1));
     }, { passive: false });
 
-    col.append(toggle, note);
+    const flags = document.createElement('div');
+    flags.className = 'step-flags';
+    const flag = (key, text, title) => {
+      const b = document.createElement('button');
+      b.className = `step-flag step-flag-${key}`;
+      b.textContent = text;
+      b.title = title;
+      b.addEventListener('click', () => {
+        step[key] = !step[key];
+        markCustom();
+        render();
+      });
+      flags.appendChild(b);
+      return b;
+    };
+    const slide = flag('slide', 'S', 'Slide: a nota escorrega até o próximo passo, sem soltar');
+    const accent = flag('accent', 'A', 'Accent: passo mais forte (saída "accent")');
+
+    col.append(toggle, note, flags);
     grid.appendChild(col);
 
     const render = () => {
       toggle.classList.toggle('on', step.on);
       note.textContent = formatNote(step.note);
       note.classList.toggle('muted', !step.on);
+      slide.classList.toggle('on', step.slide);
+      accent.classList.toggle('on', step.accent);
+      flags.classList.toggle('muted', !step.on);
     };
     render();
     renders.push(render);
@@ -101,6 +123,7 @@ export function createSequencerPanel(seq) {
   // Destaca o passo que está soando (consulta o relógio do áudio a cada quadro)
   let lit = -1;
   (function follow() {
+    renderPlay(); // o play também pode vir da barra de espaço
     const now = seq.playheadStep();
     if (now !== lit) {
       columns[lit]?.classList.remove('playing');

@@ -1,5 +1,8 @@
+import { BASS_PRESETS } from '../audio/bassPresets.js';
+import { midiToName } from '../audio/modules/ChordOscillator.js';
 import { createKnob } from './Knob.js';
 import { createPanel } from './Panel.js';
+import { createPresetSelect } from './PresetSelect.js';
 import { createWaveformButtons } from './WaveformButtons.js';
 
 // Painel do Baixo: forma de onda, um botão para testar a nota e duas fileiras de knobs.
@@ -20,16 +23,26 @@ export function createBassPanel(bass, onChange) {
   const buttons = document.createElement('div');
   buttons.className = 'panel-buttons';
   buttons.appendChild(play);
-  body.prepend(createWaveformButtons(bass), buttons);
+  const waves = createWaveformButtons(bass);
+  const { select: presets } = createPresetSelect(BASS_PRESETS, '', 'Sons de baixo prontos');
+  presets.value = ''; // começa em "Personalizado" até escolher um
+  body.prepend(presets, waves, buttons);
 
-  const knob = (key, label, min, max, step, unit, set) =>
-    createKnob({
-      min, max, value: params[key], step, label, unit,
-      onChange: (v) => { set(v); onChange?.(); },
-    }).element;
+  const knobs = {};
+  const renderFreq = () => knobs.freq.set(params.freq, false); // redesenha o visor da nota base
+  bass.onKey = () => { renderFreq(); onChange?.(); };
+  const knob = (key, label, min, max, step, unit, set, format) => {
+    knobs[key] = createKnob({
+      min, max, value: params[key], step, label, unit, format,
+      onChange: (v) => { set(v); onChange?.(); presets.value = ''; },
+    });
+    return knobs[key].element;
+  };
 
   row.append(
-    knob('freq', 'Nota base', 20, 200, 1, 'Hz', (v) => bass.setFreq(v)),
+    // com um acorde ligado na porta "tom", o knob escolhe só a oitava e o visor mostra a nota que soa
+    knob('freq', 'Nota base', 20, 200, 1, 'Hz', (v) => { bass.setFreq(v); renderFreq(); },
+      (v) => (bass.key == null ? `${v} Hz` : `${midiToName(bass.key).replace(/-?\d+$/, '')} ${bass.freq} Hz`)),
     knob('sub', 'Sub', 0, 100, 5, '%', (v) => bass.setSub(v)),
     knob('drive', 'Drive', 0, 100, 5, '%', (v) => bass.setDrive(v)),
     knob('level', 'Nível', 0, 100, 5, '%', (v) => bass.setLevel(v)),
@@ -45,5 +58,13 @@ export function createBassPanel(bass, onChange) {
     knob('sustain', 'Sustain', 0, 100, 5, '%', (v) => bass.setSustain(v)),
   );
   body.appendChild(filterRow);
+
+  presets.addEventListener('change', () => {
+    const { id, name, ...state } = BASS_PRESETS.find((p) => p.id === presets.value);
+    bass.setState(state);
+    waves.refresh();
+    for (const [key, k] of Object.entries(knobs)) k.set(params[key], false);
+    onChange?.();
+  });
   return element;
 }
